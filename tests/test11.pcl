@@ -1,0 +1,15 @@
+a = 0;
+b = 1;
+c = 2;
+d = 3;
+x = ?;
+
+if(x > a)
+{
+    if(x > b)
+        print b;
+    
+    if(x > c)
+        print c;
+}
+print d;
