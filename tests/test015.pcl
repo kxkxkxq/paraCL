@@ -1,0 +1,6 @@
+a = 643;
+b = 31000123123;
+aboba = a * b;
+_aBOo_bA__ = aboba - a;
+_ = a / b;
+print _;
