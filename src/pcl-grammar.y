@@ -1,16 +1,17 @@
-//-----------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 //
 //  Grammar for paraCL parser :
-//      EXPRL  ->   EXPR; EXPRL | empty
-//      EXPR   ->   VAR = E
-//      E      ->   T | E - T | E + T   //  need to rename : T, E, F, ...
-//      T      ->   F | T / F | T * F   
-//      F      ->   NUM | VAR | ( E )   
-//      VAR    ->   ID
-//    
-//  now it is a simple grammar without scopes, conditional statements and loops
-//  and keywords
-//-----------------------------------------------------------------------------
+//                 statements -> statement; statements | empty 
+//                  statement -> expression
+//                 expression -> assignment | additive_expression
+//                 assignment -> variable | expression
+//        additive_expression -> additive_expression bin_add_oper multiplicative_expression
+//                               | multiplicative_expression
+//  multiplicative_expression -> multiplicative_expression bin_mul_oper terminal | terminal
+//                   terminal -> number | variable | ( expression )
+//                   variable -> id 
+//
+//-------------------------------------------------------------------------------------------------
 
 %language "c++"
 
@@ -31,19 +32,23 @@
 }
 
 %token
-    EQUAL   "="
+    ASSIGN  "="
     MINUS   "-"
     PLUS    "+"
     DIV     "/"
     MUL     "*"
+    LESS    "<"
+    GREATER ">"
     SCOLON  ";"
+    LCBR    "{"
+    RCBR    "}"
     LPAREN  "("
     RPAREN  ")"
     ERR     
 ;
-%token <int>         num
-%token <std::string> id
-%nterm expr e t f   //  need to rename
+%token <int> NUMBER
+%token <std::string> ID
+%nterm statements statement expression assignment additive_expression multiplicative_expression
 
 %left '-' '+'
 %left '/' '*'

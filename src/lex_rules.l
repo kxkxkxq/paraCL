@@ -10,24 +10,26 @@
 WS      [ \t\n\r\v]+
 DIGIT   [0-9]
 DIGIT1  [1-9]
-OP      [\+\-\=\*\/\?\<\>]
-SEP     [;{}()]
+OP      [\+\-\=\*\/\<\>]
+SEP     [\;\{\}\(/)]
 ID      [a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
 {WS}                            /* skip */
 
-{OP}|"<="|">="|"!="|"||"|"&&"   return process_operator();
+{OP} | "<=" | ">=" | "!=" | "=="  { return process_operator(); }
 
-{DIGIT1}{DIGIT}*|{DIGIT}        return process_number();
+"?"                               { return process_input(); }
 
-"print"|"if"|"else"|"while"     return process_keyword();
+{DIGIT1}{DIGIT}* | {DIGIT}        { return process_number(); }
 
-{ID}                            return process_identifier();
+"print" | "if" | "while"          { return process_keyword(); }
 
-{SEP}                           return process_separator();
+{ID}                              { return process_identifier(); }
 
-.                               return process_unknown();
+{SEP}                             { return process_separator(); }
+
+.                                 { return process_unknown(); }
 
 %%
