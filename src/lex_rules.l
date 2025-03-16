@@ -4,6 +4,7 @@
 %{
 
 #include "lexer.hpp"
+#include "pcl_grammar.tab.hh"
 
 %}
 
