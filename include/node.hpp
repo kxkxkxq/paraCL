@@ -1,76 +1,116 @@
 #pragma once
 
-#include <>
+#include <vector>
+#include <string>
 
 namespace astnodes
 {
     enum class NodeType
     {
-
+        BINOP,
+        ID,
+        NUMBER,
+        STATEMENT,
+        SCOPE
     };
     
-    enum class BinOpNodeType
+    enum class BinOpType
     {
-
+        ASSIGN,
+        MINUS,
+        PLUS,
+        DIV,
+        MUL,
+        LESS,
+        GREATER,
+        EQUAL
     };
 
-    enum class StNodeType
+    enum class StatementType
     {
-
+        EXPRESSION,
+        IF,
+        WHILE
     };
 
-    enum class ExprNodeType
+    struct INode
     {
-
-    };
-    
-    struct Node
-    {
-        Node *parent = nullptr;
+        INode* parent = nullptr;
         NodeType nType;
-        virtual ~Node() {}
+        virtual ~INode() {}
     };
 
-    struct StatementNode 
+    class IdNode : public INode
     {
-        StNodeType stType;
-        virtual ~StatementNode() {}
+        std::string id_;
+        int value_;
+
+    public :
+        IdNode(INode* par, std::string i, int v) : INode{par, NodeType::ID}, id_(i), value_(v) {}
+
+        std::string get_id() { return id_; }
+
+        int get_value() { return value_; }
     };
 
-    struct BinOpNode final : public Node
+    class NumberNode : public INode
     {
-        BinOpNodeType opType;
-        ExpressionNode *lChild = nullptr;
-        ExpressionNode *rChild = nullptr;
+        int constant_;
 
-    public:
-        BinOpNode(Node *parent, BinOpNodeType opcode) : Node{parent, nType::BINOP}, opType(opcode) {} 
+    public : 
+        NumberNode(INode* par, int c) : INode{par, NodeType::CONSTANT}, constant_(c) {}
 
-        void push_left_child ()
-        {
-
-        }
+        int get_constant() { return constant_; }  
     };
 
-    struct ExpressionNode : public StatementNode
+    class ScopeNode : public INode
     {
+        std::vector<INode*> scopeVec_;
 
+    public : 
+        ScopeNode(INode* par) : INode{par, NodeType::SCOPE} {}
+
+        const std::vector<INode*> get_scopeVec() { return scopeVec_; } 
     };
 
-    struct AssignmentNode : public ExpressionNode
+    class BinOpNode : public INode
     {
+        BinOpType opType_;
+        INode* lChild_ = nullptr;
+        INode* rChild_ = nullptr;
 
-    };
-
-    struct ArithmeticNode : public ExpressionNode
-    {
+    public :
+        BinOpNode(INode* par, BinOpType t, INode* l, INode* r) : INode{par, NodeType::BINOP},
+                                                                 opType_{t},
+                                                                 lChild_{l},
+                                                                 rChild_{r} {};
+                                                                 
+        BinOpType get_binop_type() { return opType_; }
         
+        const INode* get_left_child() { return lChild_; }
+
+        const INode* get_right_child() {return rChild_; }
+    }
+
+    class StatementNode : public INode
+    {
+        BinOpNode* expression_ = nullptr;
+
+    public :
+        StatementNode(INode* par, BinOpNode* expr) : INode{par, NodeType::STATEMENT}, 
+                                                     expression_(expr) {}
+        const BinOpNode* get_expression() { return expression_; }  
     };
 
+    class IfExpressionNode : public StatementNode
+    {
+        ScopeNode* scope_ = nullptr;
+    };
 
-
-
-
+    class WhileExpressionNode : public StatementNode
+    {
+        ScopeNode* scope_ = nullptr;
+    };
 
 
 
