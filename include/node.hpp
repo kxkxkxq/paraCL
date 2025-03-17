@@ -83,8 +83,7 @@ namespace astnodes
         BinOpNode(INode* par, BinOpType t, INode* l, INode* r) : INode{par, NodeType::BINOP},
                                                                  opType_{t},
                                                                  lChild_{l},
-                                                                 rChild_{r} {};
-                                                                 
+                                                                 rChild_{r} {}                                                       
         BinOpType get_binop_type() { return opType_; }
         
         const INode* get_left_child() { return lChild_; }
@@ -100,21 +99,42 @@ namespace astnodes
         StatementNode(INode* par, BinOpNode* expr) : INode{par, NodeType::STATEMENT}, 
                                                      expression_(expr) {}
         const BinOpNode* get_expression() { return expression_; }  
+
+    private :
+        virtual StatementType get_statement_type() const = 0;
     };
+
+    class ExpressionNode : public StatementNode
+    {
+        StatementType stType_;
+
+    public :
+        ExpressionNode(INode* par, BinOpNode* expr) : StatementNode{par, expr}, 
+                                                      stType_(StatementNode::EXPRESSION) {}
+
+        StatementType get_statement_type() const override { return stType_; }
+    }
 
     class IfExpressionNode : public StatementNode
     {
+        StatementType stType_;
         ScopeNode* scope_ = nullptr;
+
+    public :
+        IfExpressionNode(INode* par, BinOpNode* expr, ScopeNode* sc) : StatementNode{par, expr},
+                                                                       stType_(StatementType::IF),
+                                                                       scope_(sc) {}
+        StatementType get_statement_type() const override { return stType_; }                                                
     };
 
     class WhileExpressionNode : public StatementNode
     {
+        StatementType stType_;
         ScopeNode* scope_ = nullptr;
+    public :
+        WhileExpressionNode(INode* par, BinOpNode* expr, ScopeNode* sc) : StatementNode{par, expr},
+                                                                          stType_(StatementType::WHILE),
+                                                                          scope_(sc) {} 
+        StatementType get_statement_type() const override { return stType_; }
     };
-
-
-
-
-
-
 }   //  namespace astnodes
