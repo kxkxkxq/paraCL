@@ -57,14 +57,20 @@ namespace yy
     RCBR    
     LPAREN  
     RPAREN  
+    ERR     
+;
+
+//  keywords
+%token
+    INPUT
+    OUTPUT
     WHILE 
     IF
-    ERR     
 ;
 
 %token <int> NUMBER
 %token <std::string> ID
-%nterm <std::vector<StatementNode*>> statements 
+%nterm <Statements> statements 
 %nterm <StatementNode*> statement 
 %nterm <ExpressionNode*> expression 
 %nterm <IfExpressionNode*> if_expression
@@ -111,13 +117,20 @@ assignment: variable ASSIGN expression  { BinOpNode* binOpExpr = make_bin_op_nod
                                           $$ = make_expression_node(binOpExpr); }
 ;
 
-arithmetic_expr: arithmetic_expr MINUS   terminal  { $$ = make_bin_op_node($1, $3, BinOpType::MINUS); }
-               | arithmetic_expr PLUS    terminal  { $$ = make_bin_op_node($1, $3, BinOpType::PLUS); }
-               | arithmetic_expr DIV     terminal  { $$ = make_bin_op_node($1, $3, BinOpType::DIV); }
-               | arithmetic_expr MUL     terminal  { $$ = make_bin_op_node($1, $3, BinOpType::MUL); }
-               | arithmetic_expr LESS    terminal  { $$ = make_bin_op_node($1, $3, BinOpType::LESS); }
-               | arithmetic_expr GREATER terminal  { $$ = make_bin_op_node($1, $3, BinOpType::GREATER); }
-               | arithmetic_expr EQUAL   terminal  { $$ = make_bin_op_node($1, $3, BinOpType::EQUAL); }
+arithmetic_expr: arithmetic_expr MINUS   terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::MINUS);
+                                                     $$ = make_expression_node(binOpExpr); }
+               | arithmetic_expr PLUS    terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::PLUS); 
+                                                     $$ = make_expression_node(binOpExpr); }
+               | arithmetic_expr DIV     terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::DIV); 
+                                                     $$ = make_expression_node(binOpExpr); }
+               | arithmetic_expr MUL     terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::MUL); 
+                                                     $$ = make_expression_node(binOpExpr); }
+               | arithmetic_expr LESS    terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::LESS); 
+                                                     $$ = make_expression_node(binOpExpr); }
+               | arithmetic_expr GREATER terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::GREATER); 
+                                                     $$ = make_expression_node(binOpExpr); }
+               | arithmetic_expr EQUAL   terminal  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::EQUAL); 
+                                                     $$ = make_expression_node(binOpExpr); }
 ;
 
 terminal: NUMBER                         { $$ = make_number_node($1); }
