@@ -5,6 +5,8 @@
 
 namespace astnodes
 {
+//-------------------------------------------------------------------------------------------------
+//      NODE TYPES    
     enum class NodeType
     {
         BINOP,
@@ -33,108 +35,118 @@ namespace astnodes
         WHILE
     };
 
-    struct INode
+//-------------------------------------------------------------------------------------------------
+//      NODES    
+    class INode
     {
-        INode* parent = nullptr;
-        NodeType nType;
+        NodeType nType_;
+    
+    public:
+        INode(NodeType t) = default;
+        NodeType get_node_type() { return nType_; }
         virtual ~INode() {}
     };
 
-    class IdNode : public INode
+    class IdNode final : public INode
     {
         std::string id_;
-        int value_;
 
     public :
-        IdNode(INode* par, std::string i, int v) : INode{par, NodeType::ID}, id_(i), value_(v) {}
-
+        IdNode(std::string i) : INode{NodeType::ID}, id_(i) {}
         std::string get_id() { return id_; }
-
-        int get_value() { return value_; }
     };
 
-    class NumberNode : public INode
+    class NumberNode final : public INode
     {
-        int constant_;
+        int number_;
 
     public : 
-        NumberNode(INode* par, int c) : INode{par, NodeType::CONSTANT}, constant_(c) {}
-
-        int get_constant() { return constant_; }  
+        NumberNode(int n) : INode{NodeType::NUMBER}, number_(n) {}
+        int get_number() { return number_; }  
     };
 
-    class ScopeNode : public INode
+    class ScopeNode final: public INode
     {
         std::vector<INode*> scopeVec_;
 
     public : 
-        ScopeNode(INode* par) : INode{par, NodeType::SCOPE} {}
-
-        const std::vector<INode*> get_scopeVec() { return scopeVec_; } 
+        ScopeNode() : INode{ NodeType::SCOPE } {}
+        void push_node_to_scope (INode* n) { scopeVec_.push_back(n); } 
     };
 
-    class BinOpNode : public INode
+    class BinOpNode final : public INode
     {
-        BinOpType opType_;
         INode* lChild_ = nullptr;
         INode* rChild_ = nullptr;
+        BinOpType opType_;
 
     public :
-        BinOpNode(INode* par, BinOpType t, INode* l, INode* r) : INode{par, NodeType::BINOP},
-                                                                 opType_{t},
-                                                                 lChild_{l},
-                                                                 rChild_{r} {}                                                       
+        BinOpNode(INode* l, INode* r, BinOpType t) : INode{NodeType::BINOP}, 
+                                                     rChild_{l}, 
+                                                     lChild_{r}, 
+                                                     opType_{t} {}                                                       
         BinOpType get_binop_type() { return opType_; }
-        
-        const INode* get_left_child() { return lChild_; }
-
-        const INode* get_right_child() {return rChild_; }
-    }
+        INode* get_left_child() { return lChild_; }
+        INode* get_right_child() {return rChild_; }
+    };
 
     class StatementNode : public INode
     {
         BinOpNode* expression_ = nullptr;
 
     public :
-        StatementNode(INode* par, BinOpNode* expr) : INode{par, NodeType::STATEMENT}, 
-                                                     expression_(expr) {}
-        const BinOpNode* get_expression() { return expression_; }  
+        StatementNode(BinOpNode* expr) : INode{NodeType::STATEMENT}, expression_(expr) {}
+        BinOpNode* get_bin_op_expression() { return expression_; }  
 
     private :
         virtual StatementType get_statement_type() const = 0;
     };
 
-    class ExpressionNode : public StatementNode
+    class ExpressionNode final : public StatementNode
     {
         StatementType stType_;
 
     public :
-        ExpressionNode(INode* par, BinOpNode* expr) : StatementNode{par, expr}, 
-                                                      stType_(StatementNode::EXPRESSION) {}
-
+        ExpressionNode(BinOpNode* expr) : StatementNode{expr}, stType_(StatementType::EXPRESSION) {}
         StatementType get_statement_type() const override { return stType_; }
-    }
+    };
 
-    class IfExpressionNode : public StatementNode
+    class IfExpressionNode final : public StatementNode
     {
         StatementType stType_;
         ScopeNode* scope_ = nullptr;
 
     public :
-        IfExpressionNode(INode* par, BinOpNode* expr, ScopeNode* sc) : StatementNode{par, expr},
-                                                                       stType_(StatementType::IF),
-                                                                       scope_(sc) {}
+        IfExpressionNode(BinOpNode* expr, ScopeNode* sc) : StatementNode{expr},
+                                                           stType_(StatementType::IF),
+                                                           scope_(sc) {}
         StatementType get_statement_type() const override { return stType_; }                                                
     };
 
-    class WhileExpressionNode : public StatementNode
+    class WhileExpressionNode final : public StatementNode
     {
         StatementType stType_;
         ScopeNode* scope_ = nullptr;
     public :
-        WhileExpressionNode(INode* par, BinOpNode* expr, ScopeNode* sc) : StatementNode{par, expr},
-                                                                          stType_(StatementType::WHILE),
-                                                                          scope_(sc) {} 
+        WhileExpressionNode(BinOpNode* expr, ScopeNode* sc) : StatementNode{expr},
+                                                              stType_(StatementType::WHILE),
+                                                              scope_(sc) {} 
         StatementType get_statement_type() const override { return stType_; }
     };
+
+    class Statements final
+    {
+        std::vector<StatementNode*> statVec_;
+
+    public :
+        Statements() {}
+        void add_statement(StatementNode* sn) { statVec_.push_back(sn); }
+    }
+
+//-------------------------------------------------------------------------------------------------
+//      MAKE NODE FUNCS
+IdNode*         make_id_node(std::string s) { return new IdNode{s}; }
+NumberNode*     make_number_node(int n) { return new NumberNode{n}; } 
+BinOpNode*      make_bin_op_node(INode* l, INode* r, BinOpType t) { return new BinOpNode{l, r, t}; } 
+ExpressionNode* make_expression_node(BinOpNode* e) { return new ExpressionNode{e}; }   
 }   //  namespace astnodes
