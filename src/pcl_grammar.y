@@ -2,10 +2,10 @@
 //
 //  Grammar for paraCL parser :
 //                 statements -> statement; statements | empty 
-//                  statement -> expression
+//                  statement -> expression | if_expression | while_expression 
 //                 expression -> assignment | arithmetic_expr
-//                 assignment -> variable | expression
-//            arithmetic_expr -> arithmetic_expr bin_arithm_oper terminal
+//                 assignment -> variable ASSIGN expression
+//            arithmetic_expr -> arithmetic_expr bin_arithm_oper terminal | terminal
 //                   terminal -> number | variable | ( arithmetic_expr )
 //                   variable -> id 
 //
@@ -21,6 +21,10 @@
 %code requires
 {
 #include <string>
+
+#include "node.hpp"
+
+using namespace astnodes;
 
 namespace yy  
 {
@@ -40,28 +44,36 @@ namespace yy
 }   //  code
 
 %token
-    ASSIGN  "="
-    MINUS   "-"
-    PLUS    "+"
-    DIV     "/"
-    MUL     "*"
-    LESS    "<"
-    GREATER ">"
-    EQUAL   "=="
-    SCOLON  ";"
-    LCBR    "{"
-    RCBR    "}"
-    LPAREN  "("
-    RPAREN  ")"
+    ASSIGN  
+    MINUS   
+    PLUS    
+    DIV     
+    MUL     
+    LESS    
+    GREATER 
+    EQUAL   
+    SCOLON  
+    LCBR
+    RCBR    
+    LPAREN  
+    RPAREN  
+    WHILE 
+    IF
     ERR     
 ;
+
 %token <int> NUMBER
 %token <std::string> ID
-%nterm std:vector<StatementNode> statements 
-%nterm StatementNode statement 
-%nterm ExpressionNode expression 
-%nterm AssignmentNode assignment 
-%nterm ArithmeticNode arithmetic_expr
+%nterm <std::vector<StatementNode*>> statements 
+%nterm <StatementNode*> statement 
+%nterm <ExpressionNode*> expression 
+%nterm <IfExpressionNode*> if_expression
+%nterm <WhileExpressionNode*> while_expression
+%nterm <ScopeNode*> scope
+%nterm <ExpressionNode*> assignment 
+%nterm <ExpressionNode*> arithmetic_expr
+%nterm <INode*> variable
+%nterm <Inode*> terminal 
 
 %left '-' '+'
 %left '/' '*'
@@ -71,38 +83,50 @@ namespace yy
 
 %%
 
-program: statements { driver->insert($1); }
+program: statements  { driver->insert_statements($1); }
 ;
 
-statements: statement SCOLON statements
-          | statement SCOLON
+statements: statement SCOLON statements  { $$ = $3; $$.push_back($1); }
+          | statement SCOLON             { $$.push_back($1); }
 ;
 
-statement: expression    
-         | if_statement
-         | while_statement
+statement: expression        { $$ = $1; }
+         | if_expression     { $$ = $1; }
+         | while_expression  { $$ = $1; }
 ;
 
-expression: assignment
-          | arithmetic_expr
+if_expression: IF LPAREN expression RPAREN statement             {}
+             | IF LPAREN expression RPAREN LCBR statements RCBR  {}
 ;
 
-asssigment: variable
-          | expression
+while_expression: WHILE LPAREN expression RPAREN statement             {}
+                | WHILE LPAREN expression RPAREN LCBR statements RCBR  {}
 ;
 
-arithmetic_expr: arithmetic_expr MINUS terminal
-               | arithmetic_expr PLUS terminal
-               | arithmetic_expr DIV terminal
-               | arithmetic_expr MUL terminal
-               | arithmetic_expr LESS terminal
-               | arithmetic_expr GREATER terminal
-               | arithmetic_expr EQUAL terminal
+expression: assignment       { $$ = $1; }
+          | arithmetic_expr  { $$ = $1; }
 ;
 
-terminal: number    
-        | variable
-        | LPAREN arithmetic_expr RPAREN
+assignment: variable ASSIGN expression  { BinOpNode* binOpExpr = make_bin_op_node($1, $3, BinOpType::ASSIGN);
+                                          $$ = make_expression_node(binOpExpr); }
+;
+
+arithmetic_expr: arithmetic_expr MINUS   terminal  { $$ = make_bin_op_node($1, $3, BinOpType::MINUS); }
+               | arithmetic_expr PLUS    terminal  { $$ = make_bin_op_node($1, $3, BinOpType::PLUS); }
+               | arithmetic_expr DIV     terminal  { $$ = make_bin_op_node($1, $3, BinOpType::DIV); }
+               | arithmetic_expr MUL     terminal  { $$ = make_bin_op_node($1, $3, BinOpType::MUL); }
+               | arithmetic_expr LESS    terminal  { $$ = make_bin_op_node($1, $3, BinOpType::LESS); }
+               | arithmetic_expr GREATER terminal  { $$ = make_bin_op_node($1, $3, BinOpType::GREATER); }
+               | arithmetic_expr EQUAL   terminal  { $$ = make_bin_op_node($1, $3, BinOpType::EQUAL); }
+;
+
+terminal: NUMBER                         { $$ = make_number_node($1); }
+        | variable                       { $$ = $1; }
+        | LPAREN arithmetic_expr RPAREN  { $$ = $2; }
+;
+
+variable: ID  { $$ = make_id_node($1); }
+;
 
 %%
 
