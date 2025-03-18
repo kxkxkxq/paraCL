@@ -6,14 +6,12 @@
 namespace astnodes
 {
 //-------------------------------------------------------------------------------------------------
-//      NODE TYPES    
+//      TYPES    
     enum class NodeType
     {
         BINOP,
-        ID,
-        NUMBER,
-        STATEMENT,
-        SCOPE
+        SCOPE,
+        STATEMENT
     };
     
     enum class BinOpType
@@ -35,6 +33,24 @@ namespace astnodes
         WHILE
     };
 
+    enum class ExpressionType
+    {
+        ASSIGNMENT,
+        ARITHMETIC,
+        TERMINAL
+    };
+
+    enum class TerminalType
+    {
+        VARIABLE,
+        NUMBER
+    };
+
+    enum class VariableType
+    {
+        ID
+    };
+
 //-------------------------------------------------------------------------------------------------
 //      NODES    
     class INode
@@ -42,27 +58,25 @@ namespace astnodes
         NodeType nType_;
     
     public:
-        INode(NodeType t) = default;
+        INode(NodeType t) : nType_(t) {};
         NodeType get_node_type() { return nType_; }
         virtual ~INode() {}
     };
 
-    class IdNode final : public INode
+    class BinOpNode final : public INode
     {
-        std::string id_;
-
+        INode* lChild_ = nullptr;
+        INode* rChild_ = nullptr;
+        BinOpType opType_;
+        
     public :
-        IdNode(std::string i) : INode{NodeType::ID}, id_(i) {}
-        std::string get_id() { return id_; }
-    };
-
-    class NumberNode final : public INode
-    {
-        int number_;
-
-    public : 
-        NumberNode(int n) : INode{NodeType::NUMBER}, number_(n) {}
-        int get_number() { return number_; }  
+        BinOpNode(INode* l, INode* r, BinOpType t) : INode{NodeType::BINOP}, 
+                                                           lChild_{l}, 
+                                                           rChild_{r}, 
+                                                           opType_{t} {}                                                       
+        BinOpType get_binop_type() { return opType_; }
+        INode* get_left_child() { return lChild_; }
+        INode* get_right_child() {return rChild_; }
     };
 
     class ScopeNode final: public INode
@@ -74,79 +88,121 @@ namespace astnodes
         void push_node_to_scope (INode* n) { scopeVec_.push_back(n); } 
     };
 
-    class BinOpNode final : public INode
-    {
-        INode* lChild_ = nullptr;
-        INode* rChild_ = nullptr;
-        BinOpType opType_;
-
-    public :
-        BinOpNode(INode* l, INode* r, BinOpType t) : INode{NodeType::BINOP}, 
-                                                     rChild_{l}, 
-                                                     lChild_{r}, 
-                                                     opType_{t} {}                                                       
-        BinOpType get_binop_type() { return opType_; }
-        INode* get_left_child() { return lChild_; }
-        INode* get_right_child() {return rChild_; }
-    };
-
-    class StatementNode : public INode
-    {
-        BinOpNode* expression_ = nullptr;
-
-    public :
-        StatementNode(BinOpNode* expr) : INode{NodeType::STATEMENT}, expression_(expr) {}
-        BinOpNode* get_bin_op_expression() { return expression_; }  
-
-    private :
-        virtual StatementType get_statement_type() const = 0;
-    };
-
-    class ExpressionNode final : public StatementNode
+    class StatementINode : public INode
     {
         StatementType stType_;
 
     public :
-        ExpressionNode(BinOpNode* expr) : StatementNode{expr}, stType_(StatementType::EXPRESSION) {}
-        StatementType get_statement_type() const override { return stType_; }
+        StatementINode(StatementType t) : INode{NodeType::STATEMENT} {}
+        StatementType get_statement_type() const { return stType_; }
     };
 
-    class IfExpressionNode final : public StatementNode
+    class ExpressionINode : public StatementINode
     {
-        StatementType stType_;
+        ExpressionType exprType_;
+
+    public :
+        ExpressionINode(ExpressionType t) : StatementINode{StatementType::EXPRESSION} {}
+        ExpressionType get_expression_type() const { return exprType_; };
+    };
+
+    class IfExpressionNode final : public StatementINode
+    {
+        ExpressionINode* expr_ = nullptr;
         ScopeNode* scope_ = nullptr;
 
     public :
-        IfExpressionNode(BinOpNode* expr, ScopeNode* sc) : StatementNode{expr},
-                                                           stType_(StatementType::IF),
-                                                           scope_(sc) {}
-        StatementType get_statement_type() const override { return stType_; }                                                
+        IfExpressionNode(ExpressionINode* e, ScopeNode* s) : StatementINode{StatementType::IF},
+                                                             expr_(e), scope_(s) {} 
+        //  get_expression()
+        //  get_scope()                                           
     };
 
-    class WhileExpressionNode final : public StatementNode
+    class WhileExpressionNode final : public StatementINode
     {
-        StatementType stType_;
-        ScopeNode* scope_ = nullptr;
+        ExpressionINode* expr_ = nullptr;
+        ScopeNode* scope_ = nullptr; 
+       
     public :
-        WhileExpressionNode(BinOpNode* expr, ScopeNode* sc) : StatementNode{expr},
-                                                              stType_(StatementType::WHILE),
-                                                              scope_(sc) {} 
-        StatementType get_statement_type() const override { return stType_; }
+        WhileExpressionNode(ExpressionINode* e, ScopeNode* s) : StatementINode{StatementType::WHILE},
+                                                                expr_(e), scope_(s) {}
+        //  get_expression()
+        //  get_scope()   
+    };
+
+    class AssignmentExprNode final : public ExpressionINode
+    {
+        BinOpNode* expr_ = nullptr;
+    
+    public :
+        AssignmentExprNode(BinOpNode* e) : ExpressionINode{ExpressionType::ASSIGNMENT}, expr_(e) {}
+        //  get_expression()
+    };
+
+    class ArithmeticExprNode final : public ExpressionINode
+    {
+        BinOpNode* expr_ = nullptr;
+    
+    public :
+        ArithmeticExprNode(BinOpNode* e) : ExpressionINode{ExpressionType::ARITHMETIC}, expr_(e) {}
+        //  get_expression()
+    };
+
+    class TerminalINode : public ExpressionINode
+    {
+        TerminalType termType_;
+    
+    public :
+        TerminalINode(TerminalType t) : ExpressionINode{ExpressionType::TERMINAL} {}
+        TerminalType get_terminal_type() const { return termType_; };
+    };
+
+    class NumberNode final : public TerminalINode
+    {
+        int number_;
+
+    public :
+        NumberNode(int n) : TerminalINode{TerminalType::NUMBER}, number_(n) {}
+        int get_number() { return number_; } 
+    };
+
+    class VariableINode : public TerminalINode
+    {
+        VariableType varType_;
+
+    public :
+        VariableINode(VariableType t) : TerminalINode{TerminalType::VARIABLE} {}
+        VariableType get_varible_type() { return varType_; }
+    };
+
+    class IdNode final : public VariableINode
+    {
+        std::string id_;
+
+    public :
+        IdNode(std::string i) : VariableINode{VariableType::ID}, id_(i) {}
+        std::string get_id() { return id_; } 
     };
 
     class Statements final
     {
-        std::vector<StatementNode*> statVec_;
+        std::vector<StatementINode*> statVec_;
 
     public :
         Statements() {}
-        void add_statement(StatementNode* sn) { statVec_.push_back(sn); }
-    }
+
+        template< class InputIt >
+        void assign( InputIt first, InputIt last ) { statVec_.assign(first, last); } 
+        void add_statement(StatementINode* sn) { statVec_.push_back(sn); }
+        
+        auto begin() { return statVec_.begin(); }
+        auto end() { return statVec_.end(); }
+    };
 
 //-------------------------------------------------------------------------------------------------
 //      MAKE NODE FUNCS
 IdNode*         make_id_node(std::string s) { return new IdNode{s}; }
 NumberNode*     make_number_node(int n) { return new NumberNode{n}; } 
 BinOpNode*      make_bin_op_node(INode* l, INode* r, BinOpType t) { return new BinOpNode{l, r, t}; } 
-ExpressionNode* make_expression_node(BinOpNode* e) { return new ExpressionNode{e}; }   
+ExpressionINode* make_expression_node(BinOpNode* e) { return new ExpressionINode{e}; }   
 }   //  namespace astnodes
