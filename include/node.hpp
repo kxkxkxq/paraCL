@@ -71,9 +71,8 @@ namespace astnodes
         
     public :
         BinOpNode(INode* l, INode* r, BinOpType t) : INode{NodeType::BINOP}, 
-                                                           lChild_{l}, 
-                                                           rChild_{r}, 
-                                                           opType_{t} {}                                                       
+                                                     lChild_{l}, rChild_{r}, 
+                                                     opType_{t} {}                                                       
         BinOpType get_binop_type() { return opType_; }
         INode* get_left_child() { return lChild_; }
         INode* get_right_child() {return rChild_; }
@@ -85,6 +84,8 @@ namespace astnodes
 
     public : 
         ScopeNode() : INode{ NodeType::SCOPE } {}
+        template<class InputIt>
+        void assign( InputIt first, InputIt last ) { scopeVec_.assign(first, last); } 
         void push_node_to_scope (INode* n) { scopeVec_.push_back(n); } 
     };
 
@@ -106,25 +107,25 @@ namespace astnodes
         ExpressionType get_expression_type() const { return exprType_; };
     };
 
-    class IfExpressionNode final : public StatementINode
+    class IfExprNode final : public StatementINode
     {
         ExpressionINode* expr_ = nullptr;
         ScopeNode* scope_ = nullptr;
 
     public :
-        IfExpressionNode(ExpressionINode* e, ScopeNode* s) : StatementINode{StatementType::IF},
+        IfExprNode(ExpressionINode* e, ScopeNode* s) : StatementINode{StatementType::IF},
                                                              expr_(e), scope_(s) {} 
         //  get_expression()
         //  get_scope()                                           
     };
 
-    class WhileExpressionNode final : public StatementINode
+    class WhileExprNode final : public StatementINode
     {
         ExpressionINode* expr_ = nullptr;
         ScopeNode* scope_ = nullptr; 
        
     public :
-        WhileExpressionNode(ExpressionINode* e, ScopeNode* s) : StatementINode{StatementType::WHILE},
+        WhileExprNode(ExpressionINode* e, ScopeNode* s) : StatementINode{StatementType::WHILE},
                                                                 expr_(e), scope_(s) {}
         //  get_expression()
         //  get_scope()   
@@ -191,7 +192,7 @@ namespace astnodes
     public :
         Statements() {}
 
-        template< class InputIt >
+        template<class InputIt>
         void assign( InputIt first, InputIt last ) { statVec_.assign(first, last); } 
         void add_statement(StatementINode* sn) { statVec_.push_back(sn); }
         
@@ -201,8 +202,12 @@ namespace astnodes
 
 //-------------------------------------------------------------------------------------------------
 //      MAKE NODE FUNCS
-IdNode*         make_id_node(std::string s) { return new IdNode{s}; }
-NumberNode*     make_number_node(int n) { return new NumberNode{n}; } 
-BinOpNode*      make_bin_op_node(INode* l, INode* r, BinOpType t) { return new BinOpNode{l, r, t}; } 
-ExpressionINode* make_expression_node(BinOpNode* e) { return new ExpressionINode{e}; }   
+ScopeNode* make_scope_node() { return new ScopeNode{}; }
+IfExprNode* make_if_node(ExpressionINode* e, ScopeNode* s) { return new IfExprNode{e, s}; }
+WhileExprNode* make_while_node(ExpressionINode* e, ScopeNode* s) { return new WhileExprNode{e, s}; }
+BinOpNode* make_bin_op_node(INode* l, INode* r, BinOpType t) { return new BinOpNode{l, r, t}; }
+AssignmentExprNode* make_assignment_node(BinOpNode* e) { return new AssignmentExprNode{e}; }
+ArithmeticExprNode* make_arithmetic_node(BinOpNode* e) { return new ArithmeticExprNode{e}; }
+NumberNode* make_number_node(int n) { return new NumberNode{n}; }
+IdNode* make_id_node(std::string i) { return new IdNode{i}; }
 }   //  namespace astnodes
