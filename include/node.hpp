@@ -202,12 +202,20 @@ namespace astnodes
 
 //-------------------------------------------------------------------------------------------------
 //      MAKE NODE FUNCS
-ScopeNode* make_scope_node() { return new ScopeNode{}; }
-IfExprNode* make_if_node(ExpressionINode* e, ScopeNode* s) { return new IfExprNode{e, s}; }
-WhileExprNode* make_while_node(ExpressionINode* e, ScopeNode* s) { return new WhileExprNode{e, s}; }
-BinOpNode* make_bin_op_node(INode* l, INode* r, BinOpType t) { return new BinOpNode{l, r, t}; }
-AssignmentExprNode* make_assignment_node(BinOpNode* e) { return new AssignmentExprNode{e}; }
-ArithmeticExprNode* make_arithmetic_node(BinOpNode* e) { return new ArithmeticExprNode{e}; }
-NumberNode* make_number_node(int n) { return new NumberNode{n}; }
-IdNode* make_id_node(std::string i) { return new IdNode{i}; }
+inline ScopeNode* 
+  make_scope_node() { return new ScopeNode{}; }
+inline IfExprNode* 
+  make_if_node(ExpressionINode* e, ScopeNode* s) { return new IfExprNode{e, s}; }
+inline WhileExprNode* 
+  make_while_node(ExpressionINode* e, ScopeNode* s) { return new WhileExprNode{e, s}; }
+inline BinOpNode* 
+  make_bin_op_node(INode* l, INode* r, BinOpType t) { return new BinOpNode{l, r, t}; }
+inline AssignmentExprNode* 
+  make_assignment_node(BinOpNode* e) { return new AssignmentExprNode{e}; }
+inline ArithmeticExprNode* 
+  make_arithmetic_node(BinOpNode* e) { return new ArithmeticExprNode{e}; }
+inline NumberNode* 
+  make_number_node(int n) { return new NumberNode{n}; }
+inline IdNode* 
+  make_id_node(std::string i) { return new IdNode{i}; }
 }   //  namespace astnodes

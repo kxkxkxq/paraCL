@@ -1,10 +1,8 @@
-%option yyclass="Lexer"
 %option c++
 
 %{
 
 #include "lexer.hpp"
-#include "pcl_grammar.tab.hh"
 
 %}
 
@@ -17,20 +15,12 @@ ID      [a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
-{WS}                            /* skip */
-
-{OP} | "<=" | ">=" | "!=" | "=="  { return process_operator(); }
-
-"?"                               { return process_input(); }
-
-{DIGIT1}{DIGIT}* | {DIGIT}        { return process_number(); }
-
-"print" | "if" | "while"          { return process_keyword(); }
-
-{ID}                              { return process_identifier(); }
-
-{SEP}                             { return process_separator(); }
-
-.                                 { return process_unknown(); }
+{WS}                              //  skip
+{OP} | "<=" | ">=" | "!=" | "=="  { return yyproxy::process_operator(yytext); }
+{DIGIT1}{DIGIT}* | {DIGIT}        { return yyproxy::process_number(yytext); }
+"print" | "if" | "while" | "?"    { return yyproxy::process_keyword(yytext); }
+{ID}                              { return yyproxy::process_identifier(yytext); }
+{SEP}                             { return yyproxy::process_separator(yytext); }
+.                                 { return yyproxy::process_unknown(yytext); }
 
 %%
