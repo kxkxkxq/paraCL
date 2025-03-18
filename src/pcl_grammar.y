@@ -3,10 +3,15 @@
 //  Grammar for paraCL parser :
 //                 statements -> statement; statements | empty 
 //                  statement -> expression | if_expression | while_expression 
+//              if_expression -> if ( expression ) statement
+//                               | if ( expression ) { statements }
+//           while_expression -> while ( expression ) statement
+//                               | while ( expression ) { statements }
 //                 expression -> assignment | arithmetic_expr
-//                 assignment -> variable ASSIGN expression
-//            arithmetic_expr -> arithmetic_expr bin_arithm_oper terminal | terminal
-//                   terminal -> number | variable | ( arithmetic_expr )
+//                 assignment -> variable = expression
+//            arithmetic_expr -> arithmetic_expr bin_arithm_oper subexpr | subexpr
+//                    subexpr -> terminal | ( expression )
+//                   terminal -> number | variable 
 //                   variable -> id 
 //
 //-------------------------------------------------------------------------------------------------
@@ -51,13 +56,16 @@ namespace yy
     MUL     
     LESS    
     GREATER 
-    EQUAL   
+    EQUAL
+    LEQUAL
+    GEQUAL
+    NEQUAL
     SCOLON  
     LCBR
     RCBR    
     LPAREN  
     RPAREN  
-    ERR     
+    ERROR     
 ;
 
 //  keywords
@@ -140,7 +148,7 @@ arithmetic_expr: arithmetic_expr MINUS   subexpr  { BinOpNode* expr = make_bin_o
                                                      $$ = make_arithmetic_node(expr); }
                | arithmetic_expr EQUAL   subexpr  { BinOpNode* expr = make_bin_op_node($1, $3, BinOpType::EQUAL); 
                                                      $$ = make_arithmetic_node(expr); }
-               | subexpr                          { $$ = $1; }
+               | subexpr                          { $$ = static_cast<ArithmeticExprNode*>($1); }
 ;
 
 subexpr: terminal                  { $$ = $1; }
@@ -164,5 +172,5 @@ namespace yy
         return driver->yylex(yylval);
     }
 
-    void parser::error( //  arguments ....)
+    void parser::error(const std::string&){}
 }
