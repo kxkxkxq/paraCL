@@ -1,6 +1,8 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
+
 #include <FlexLexer.h>
 
 #include "node.hpp"
@@ -11,7 +13,7 @@ namespace yy
     class Driver final
     {
         FlexLexer *pLexer_;
-        std::vector<statement_node> statements_;
+        CurrentScopeNode* ast_;
 
     public :
         Driver(FlexLexer *l) : pLexer_(l) {};
@@ -20,11 +22,8 @@ namespace yy
         {
             parser::token_type tokenType = static_cast<parser::token_type>(pLexer_->yylex());
             
-            if (tokenType == yy:parser::token_type::NUMBER)
-                yyval->as<int>() = std::stoi(pLexer_->YYText());
-            if (tokenType == yy::parser::token_type::ID)
-                *yyval = static_cast<std::string>(pLexer_->YYText());
-
+            if (tokenType == yy::parser::token_type::NUMBER)
+                yyval->as<int>() = std::stoi(pLexer_->YYText());   
             return tokenType;
         }
 
@@ -35,9 +34,18 @@ namespace yy
             return !res;
         }
 
-        void insert_statements(const std::vector<statement_node> st)
+        void execute()
         {
-            statements_.assign(st.begin(), st.end());
+            for(auto&& stmnt : ast_)
+                stmnt.execute();
+        }
+
+#if 0  //  will be implemented later
+        void print_ast() {....}
+#endif    
+        void insert_current_scope(CurrentScopeNode* curScope)
+        {
+            ast_ = std::exchange(curScope, nullptr);
         }
     };
 }   //  namespace yy
