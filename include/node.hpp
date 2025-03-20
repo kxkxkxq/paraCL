@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
 #include <string>
 
@@ -7,12 +8,14 @@ namespace astnodes
 {
 //-------------------------------------------------------------------------------------------------
 //      TYPES    
+#if 0    
     enum class NodeType
     {
         BINOP,
         SCOPE,
         STATEMENT
     };
+ #endif
     
     enum class BinOpType
     {
@@ -26,11 +29,13 @@ namespace astnodes
         EQUAL
     };
 
+#if 0
     enum class StatementType
     {
         EXPRESSION,
         IF,
-        WHILE
+        WHILE,
+        PRINT
     };
 
     enum class ExpressionType
@@ -50,16 +55,161 @@ namespace astnodes
     {
         ID
     };
+#endif
 
 //-------------------------------------------------------------------------------------------------
 //      NODES    
+#if 1    
     class INode
     {
-        NodeType nType_;
+    public :
+        INode() = default;
+        virtual ~INode() {}
+    };
+
+    class StatementINode : public INode
+    {
+    public:
+        StatementINode() : INode{} {}
+        virtual void execute() = 0;
+    };
+
+    class ExpressionINode : public INode
+    {    
+    public:
+    ExpressionINode() : INode{} {}
+        virtual int execute() = 0;    
+    };
+
+    class ExpressionWrapper final : public StatementINode
+    {
+        ExpressionINode* expr_;
+    public :
+        ExpressionWrapper() : StatementINode{} {}
+        void execute() override { expr_->execute(); }
+    };
+
+    class CurrentScopeNode : public INode
+    {
+        std::vector<StatementINode*> curScope_;
+
+    public:
+        void push_statement(StatementINode* s) { curScope_.push_back(s); }
+    };
+
+    class BinOpNode final : public ExpressionINode
+    {
+        ExpressionINode* leftExpr_ = nullptr;
+        ExpressionINode* rightExpr_ = nullptr; 
+        BinOpType opType_;
     
     public:
-        INode(NodeType t) : nType_(t) {};
-        NodeType get_node_type() { return nType_; }
+        BinOpNode(ExpressionINode* l, ExpressionINode* r, BinOpType t) : ExpressionINode{}, 
+                                                                         leftExpr_(l),
+                                                                         rightExpr_(r),
+                                                                         opType_(t) {}
+        int execute() override;
+    };
+
+    class IfExpressionNode final : public StatementINode
+    {
+        ExpressionINode* expr_ = nullptr;
+        CurrentScopeNode* scope_ = nullptr;
+
+    public:
+        IfExpressionNode(ExpressionINode* e, CurrentScopeNode* s) : StatementINode{}, 
+                                                                    expr_(e), scope_(s) {}
+        void execute() override { expr_->execute(); }
+    };
+
+    class WhileExpressionNode final : public StatementINode
+    {
+        ExpressionINode* expr_ = nullptr;
+        CurrentScopeNode* scope_ = nullptr;
+
+    public:
+        WhileExpressionNode(ExpressionINode* e, CurrentScopeNode* s) : StatementINode{}, 
+                                                                       expr_(e), scope_(s) {}
+        void execute() override { expr_->execute(); }
+    };
+
+    class VariableNode final : public ExpressionINode
+    {
+        std::string id_;
+        int value_;
+
+    public :
+        VariableNode(const std::string i) : ExpressionINode{}, id_(i) {}
+        int execute() override { return value_; }
+        void set_value(const int v) { value_ = v; } 
+    };
+
+    class NumberNode final : public ExpressionINode
+    {
+        int number_;
+        
+    public :
+        NumberNode() : ExpressionINode{} {}
+        NumberNode(const int n) : ExpressionINode{}, number_(n) {}
+        int execute() override { return number_; } 
+        
+        void set_value(const int n) { number_ = n; }
+        int get_value() { return number_; } 
+    };
+
+    class AssignExpressionNode final : public ExpressionINode
+    {
+        VariableNode* var_ = nullptr;
+        ExpressionINode* expr_ = nullptr;
+
+    public :
+        AssignExpressionNode(VariableNode* v, ExpressionINode* e) : ExpressionINode{}, 
+                                                                     var_(v), expr_(e) {}
+        int execute()
+        {
+            int value = expr_->execute();
+            var_->set_value(value);
+            return value;
+        }
+    };
+
+    class PrintNode final : public ExpressionINode
+    {
+        ExpressionINode* expr_ = nullptr;
+
+    public :
+        PrintNode(ExpressionINode* e) : ExpressionINode{}, expr_(e) {}
+        int execute() 
+        { 
+            int prValue = expr_->execute();
+            std::cout << prValue << std::endl;
+            return prValue; 
+        }
+    };
+
+    class InputNode final : public ExpressionINode
+    {
+        NumberNode* value_ = nullptr;
+
+    public :
+        InputNode(NumberNode* n) : ExpressionINode{}, value_(n) {}
+        int execute() override
+        {
+            int number;
+            std::cin >> number;
+            value_->set_value(number);
+            return value_->get_value();
+        }
+    };
+#endif
+
+#if 0
+    class INode
+    {
+        NodeType t;
+
+    public :
+        INode(NodeType t) : t(t) {};
         virtual ~INode() {}
     };
 
@@ -140,6 +290,15 @@ namespace astnodes
         //  get_expression()
     };
 
+    class PrintNode final : public StatementINode 
+    {
+        ExpressionINode* expr_ = nullptr;
+
+    public:
+        PrintNode(ExpressionINode* e) : StatementINode{StatementType::PRINT}, expr_(e) {}
+        //  get expression()
+    };
+
     class ArithmeticExprNode final : public ExpressionINode
     {
         BinOpNode* expr_ = nullptr;
@@ -199,9 +358,11 @@ namespace astnodes
         auto begin() { return statVec_.begin(); }
         auto end() { return statVec_.end(); }
     };
+#endif
 
 //-------------------------------------------------------------------------------------------------
 //      MAKE NODE FUNCS
+#if 0
 inline ScopeNode* 
   make_scope_node() { return new ScopeNode{}; }
 inline IfExprNode* 
@@ -218,4 +379,7 @@ inline NumberNode*
   make_number_node(int n) { return new NumberNode{n}; }
 inline IdNode* 
   make_id_node(std::string i) { return new IdNode{i}; }
+inline PrintNode*
+  make_print_node(ExpressionINode* e) {return new PrintNode{e}; }
+#endif
 }   //  namespace astnodes
