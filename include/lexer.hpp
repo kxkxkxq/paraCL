@@ -1,3 +1,8 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  Auxiliary functions for processing incoming lexemes
+//
+//-------------------------------------------------------------------------------------------------
 #pragma once
 
 #include <iostream>
@@ -12,10 +17,10 @@ namespace yyproxy
     std::cout << ">> lexer read " << l << " [" << v << "]\n";
   }
 
-
   int process_operator(const std::string& text) {
     std::string curr_lexem = "operator";
     std::string curr_value = text;
+    print_lexem(curr_lexem, curr_value);
          if (curr_value == "+")  return yy::parser::token_type::PLUS;
     else if (curr_value == "-")  return yy::parser::token_type::MINUS;
     else if (curr_value == "=")  return yy::parser::token_type::ASSIGN;
@@ -40,22 +45,25 @@ namespace yyproxy
   int process_keyword(const std::string& text) {
     std::string curr_lexem = "keyword";
     std::string curr_value = text;
-         if (curr_value == "print") return yy::parser::token_type::OUTPUT;
+    print_lexem(curr_lexem, curr_value);
+         if (curr_value == "print") return yy::parser::token_type::PRINT;
     else if (curr_value == "if")    return yy::parser::token_type::IF;
     else if (curr_value == "while") return yy::parser::token_type::WHILE;
-    else if (curr_value == "?")     return yy::parser::token_type::WHILE;
+    else if (curr_value == "?")     return yy::parser::token_type::INPUT;
     else return yy::parser::token_type::ERROR;
   }
 
   int process_identifier(const std::string& text) {
     std::string curr_lexem = "identifier";
     std::string curr_value = text;
+    print_lexem(curr_lexem, curr_value);
     return yy::parser::token_type::ID;
   }
 
   int process_separator(const std::string& text) {
     std::string curr_lexem = "separator";
     std::string curr_value = text;
+    print_lexem(curr_lexem, curr_value);
          if (curr_value == ";") return yy::parser::token_type::SCOLON;
     else if (curr_value == "{") return yy::parser::token_type::LCBR;
     else if (curr_value == "}") return yy::parser::token_type::RCBR;
@@ -67,6 +75,7 @@ namespace yyproxy
   int process_unknown(const std::string& text) {
     std::string curr_lexem = "unknown";
     std::string curr_value = text;
+    print_lexem(curr_lexem, curr_value);
     return yy::parser::token_type::ERROR; 
   }
 }  //  namespace yyproxy
