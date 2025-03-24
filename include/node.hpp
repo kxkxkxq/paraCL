@@ -12,7 +12,7 @@
 #include <vector>
 #include <string>
 
-namespace astnodes
+namespace ast
 {
 //-------------------------------------------------------------------------------------------------
 //      TYPES        
@@ -73,7 +73,7 @@ namespace astnodes
         int value_;
 
     public :
-        VariableNode(const std::string i) : ExpressionINode{}, id_(i) {}
+        VariableNode(const std::string i) : ExpressionINode{}, id_(i) { }
         int execute() override { return value_; }
         void set_value(const int v) { value_ = v; } 
     };
@@ -81,7 +81,7 @@ namespace astnodes
     class CurrentScopeNode : public INode
     {
         CurrentScopeNode* parent_ = nullptr;
-        std::map<std::string, VariableNode*> context_;  //  symbol table for this scope
+        std::map<std::string, VariableNode*> context_;  //  symbol table for current scope
         std::vector<StatementINode*> curScope_;
 
     public:
@@ -89,16 +89,24 @@ namespace astnodes
         CurrentScopeNode() : INode{} {}
         CurrentScopeNode* get_parent_scope() { return parent_; }
 
-        void add_statement(StatementINode* s) 
-        { 
-            assert(s);
-            curScope_.push_back(s); 
-        }
         void add_to_context(VariableNode* v) { /*....*/ }
         bool is_declared(const std::string id) { return (context_.find(id) == context_.end()); }
-
-        auto begin() { return curScope_.begin(); }
-        auto end() { return curScope_.end(); }
+        void add_statement(StatementINode* s) 
+        { 
+            StatementINode* tmp = s;
+            assert(s);
+            curScope_.emplace_back(s);
+            assert(tmp == curScope_.back()); 
+        }
+        
+        void execute()
+        {
+            for(auto&& stmnt : curScope_)
+            {
+                assert(stmnt);
+                stmnt->execute();
+            }
+        }
     };
 
     class ExpressionWrapper final : public StatementINode
@@ -106,17 +114,17 @@ namespace astnodes
         ExpressionINode* expr_ = nullptr;
 
     public :
-        ExpressionWrapper(ExpressionINode* e) : StatementINode{}, expr_(e) {}
-        void execute() override { expr_->execute(); }
+        ExpressionWrapper(ExpressionINode* e) : StatementINode{}, expr_(e) { }
+        void execute() override {  assert(expr_) ; expr_->execute(); }
     };
 
-    class BinOpWrapper : public ExpressionINode
+    class ArithmExprWrapper : public ExpressionINode
     {
         ExpressionINode* expr_ = nullptr;
 
     public :
-        BinOpWrapper(ExpressionINode* e) : ExpressionINode{}, expr_(e) {}
-        int execute() { return expr_->execute(); }
+        ArithmExprWrapper(ExpressionINode* e) : ExpressionINode{}, expr_(e) { }
+        int execute() override { return expr_->execute(); }
     };
     
     class BinOpNode final : public ExpressionINode
@@ -127,10 +135,22 @@ namespace astnodes
         
     public:
         BinOpNode(ExpressionINode* l, ExpressionINode* r, BinOpType t) : ExpressionINode{}, 
-        leftExpr_(l),
-        rightExpr_(r),
-        opType_(t) {}
-        int execute() override;
+                                                                         leftExpr_(l),
+                                                                         rightExpr_(r),
+                                                                         opType_(t) {}
+        int execute() override 
+        { 
+            assert(leftExpr_);
+            assert(rightExpr_);
+            leftExpr_->execute(); 
+            rightExpr_->execute();
+#if 0            
+            switch(BinOpType):
+            {
+                case :
+            }
+#endif            
+        }
     };
     
     class IfExpressionNode final : public StatementINode
@@ -162,12 +182,14 @@ namespace astnodes
 
         public :
         AssignExpressionNode(VariableNode* v, ExpressionINode* e) : ExpressionINode{}, 
-        var_(v), expr_(e) {}
+                                                                    var_(v), expr_(e) {}
         int execute()
         {
+            assert(var_);
+            assert(expr_);
             int value = expr_->execute();
             var_->set_value(value);
-            return value;
+            return var_->execute();
         }
     };
 
@@ -179,6 +201,7 @@ namespace astnodes
         PrintNode(ExpressionINode* e) : ExpressionINode{}, expr_(e) {}
         int execute() 
         { 
+            assert(expr_);
             int prValue = expr_->execute();
             std::cout << prValue << std::endl;
             return prValue; 
@@ -199,12 +222,4 @@ namespace astnodes
             return value_->get_value();
         }
     };
-//-------------------------------------------------------------------------------------------------
-//      MAKE NODE FUNCS
-template <typename NodeType, class... Args>
-NodeType* make_node(Args&&... args)
-{
-    std::unique_ptr<NodeType> pNode = std::make_unique<NodeType>(args ...);
-    return pNode.get();
-}
-}   //  namespace astnodes
+}   //  namespace ast
