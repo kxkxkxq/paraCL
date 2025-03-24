@@ -78,15 +78,15 @@ namespace ast
         void set_value(const int v) { value_ = v; } 
     };
 
-    class CurrentScopeNode : public INode
+    class CurrentScopeNode : public StatementINode
     {
         CurrentScopeNode* parent_ = nullptr;
         std::map<std::string, VariableNode*> context_;  //  symbol table for current scope
         std::vector<StatementINode*> curScope_;
 
     public:
-        CurrentScopeNode(CurrentScopeNode* p) : INode{}, parent_(p) {}
-        CurrentScopeNode() : INode{} {}
+        CurrentScopeNode(CurrentScopeNode* p) : StatementINode{}, parent_(p) {}
+        CurrentScopeNode() : StatementINode{} {}
         CurrentScopeNode* get_parent_scope() { return parent_; }
 
         void add_to_context(VariableNode* v) { /*....*/ }
@@ -99,7 +99,7 @@ namespace ast
             assert(tmp == curScope_.back()); 
         }
         
-        void execute()
+        void execute() override
         {
             for(auto&& stmnt : curScope_)
             {
@@ -117,6 +117,16 @@ namespace ast
         ExpressionWrapper(ExpressionINode* e) : StatementINode{}, expr_(e) { }
         void execute() override {  assert(expr_) ; expr_->execute(); }
     };
+
+    class StatementWrapper final : public StatementINode
+    {
+        StatementINode* stmnt_ = nullptr;
+
+    public :
+        StatementWrapper(StatementINode* s) : StatementINode{}, stmnt_(s) { }
+        void execute() override {  assert(stmnt_) ; stmnt_->execute(); }
+    };
+    
 
     class ArithmExprWrapper : public ExpressionINode
     {

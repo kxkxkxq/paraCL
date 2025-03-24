@@ -37,6 +37,7 @@
 
 %code requires
 {
+#include <cassert>
 #include <iostream>
 #include <string>
 
@@ -59,6 +60,8 @@ namespace yy
     parser::token_type yylex( parser::semantic_type* yylval,                         
                               Driver* driver );
 }
+
+CurrentScopeNode* currScope = nullptr;
 }   //  code
 
 %token
@@ -91,8 +94,11 @@ namespace yy
 
 %token <int> NUMBER
 %token <std::string> ID
+%nterm <NumberNode*> number
 %nterm <CurrentScopeNode*> statements 
+%nterm <CurrentScopeNode*> scope
 %nterm <StatementINode*> statement 
+%nterm <StatementWrapper*> substmnt
 %nterm <ExpressionWrapper*> expression_wrapper 
 %nterm <ArithmExprWrapper*> arithmetic_expression
 %nterm <ExpressionINode*> expression
@@ -102,7 +108,6 @@ namespace yy
 %nterm <PrintNode*> print
 %nterm <InputNode*> input
 %nterm <AssignExpressionNode*> assignment 
-%nterm <BinOpNode*> bin_op_expression
 %nterm <ExpressionINode*> terminal
 %nterm <VariableNode*> variable 
 
@@ -116,17 +121,60 @@ namespace yy
 program: statements  { driver->set_ast_root($1); }
 ;
 
-statements: %empty                       { $$ = driver->make_node<CurrentScopeNode>(); }
-          | statements statement SCOLON  { $$ = $1; $$->add_statement($2); }
+statements: %empty               { $$ = driver->make_node<CurrentScopeNode>(); 
+                                   assert($$);
+                                   driver->descend_into_scope($$); 
+                                   assert($$); }
+          | statements substmnt  { assert($1);
+                                   assert($2);
+                                   $$ = $1;
+                                   $$->add_statement($2); }
+;
+
+substmnt: statement SCOLON  { $$ = driver->make_node<StatementWrapper>($1); }
+        | LCBR scope   RCBR {  $$ = driver->make_node<StatementWrapper>($2); }
+;
+
+scope: %empty          { $$ = driver->make_node<CurrentScopeNode>(); }
+     | scope substmnt  { assert($1);
+                         assert($2);
+                         $$ = $1;
+                         $$->add_statement($2); }
 ;
 
 statement: expression_wrapper  { $$ = $1; }
-         | if_expression       { $$ = $1; }
-         | while_expression    { $$ = $1; }
 ;
+
+//-------------------------------------------------------------------------------------------------
+    //  obsolete
+/*
+if_expression: IF LPAREN expression RPAREN scope  {  $5 = driver->make_node<CurrentScopeNode>();
+                                                     driver->descend_into_scope($5);
+                                                     $$ = driver->make_node<IfExpressionNode>($3, $5); 
+                                                     driver->ascend_from_scope(); }
+;
+
+scope: %empty                       { $$ = driver->make_node<CurrentScopeNode>(); 
+                                      assert($$);
+                                      driver->descend_into_scope($$); 
+                                      assert($$); }
+     | statement SCOLON scope       { $$ = $3;
+                                      assert($$); 
+                                      $$->add_statement($1);
+                                      assert($$); }
+                            
+;
+*/
+//-------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1); }
 ;
+
 
 expression: assignment             { $$ = $1; }
           | arithmetic_expression  { $$ = $1; }
@@ -134,6 +182,10 @@ expression: assignment             { $$ = $1; }
 ;
 
 assignment: variable ASSIGN expression  { $$ = driver->make_node<AssignExpressionNode>($1, $3); }
+          | variable ASSIGN input       { $$ = driver->make_node<AssignExpressionNode>($1, $3); }
+;
+
+input: INPUT number { $$ = driver->make_node<InputNode>($2); }
 ;
 
 print: PRINT expression { $$ = driver->make_node<PrintNode>($2); }
@@ -167,8 +219,11 @@ subexpr: terminal                  { $$ = $1; }
 ;
 
 
-terminal: NUMBER    { $$ = driver->make_node<NumberNode>($1); }
+terminal: number    { $$ = $1; }
         | variable  { $$ = $1; }
+;
+
+number: NUMBER { $$ = driver->make_node<NumberNode>($1); }
 ;
 
 variable: ID  { $$ = driver->make_node<VariableNode>($1); }
@@ -263,6 +318,7 @@ terminal: NUMBER    { $$ = make_node<NumberNode>($1); }
 variable: ID  { $$ = make_node<VariableNode>($1); }
 ;
 */
+//-------------------------------------------------------------------------------------------------
 
 %%
 
