@@ -1,3 +1,9 @@
+//-------------------------------------------------------------------------------------------------
+//
+//  AST builder - auxiliary class for sequential tree building 
+//  by creating nodes and storing unique pointers to them in the buffer
+//
+//-------------------------------------------------------------------------------------------------
 #pragma once
 
 #include <cassert>

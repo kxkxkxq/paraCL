@@ -8,9 +8,7 @@ int main()
 {
     FlexLexer *lexer = new yyFlexLexer;
     yy::Driver driver{lexer};
-    
     driver.parse();
     driver.execute();
-
     delete lexer;
 }
