@@ -1,6 +1,6 @@
 ## Current implementation status
 
-### Lexical Analyzer
+### Lexer
 - Implemented token recognition for:
   - Keywords: `if`, `while`, `print`
   - Identifiers: ASCII alphabetic names
@@ -9,9 +9,9 @@
     - Arithmetic: `+`, `-`, `*`, `/`, etc.
     - Relational: `>`, `<`, `>=`, `<=`, `==`, `!=`
     - Assignment: `=`
-  - Delimiters: `;`, `{`, `}`, `(`, `)`, `,`
+  - Delimiters: `;`, `{`, `}`, `(`, `)`
 
-### Syntax Parser
+### Parser
 - Currently parses:
   - Arithmetic expressions with operator precedence
   - Variable declarations and assignments
