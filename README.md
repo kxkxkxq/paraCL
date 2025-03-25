@@ -18,6 +18,5 @@ while (n > 0) {
 print b;
 ```
 
-```markdown
 [Progress and Internals](./DEVELOPMENT.md)
 
