@@ -19,5 +19,5 @@ print b;
 ```
 
 ```markdown
-[Progress and Internals](DEVELOPMENT.md)
+[Progress and Internals](./DEVELOPMENT.md)
 
