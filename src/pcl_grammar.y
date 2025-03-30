@@ -1,31 +1,35 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  Current paraCL grammar 
-//  (it will probably be modified and updated in the future) :
-//      current_scope -> statement; current_scope 
-//                       | { current_scope }
-//                       | empty 
-//          statement -> expression 
-//                       | if_expression 
-//                       | while_expression 
-//      if_expression -> if ( expression ) statement
-//                       | if ( expression ) { current_scope }
-//   while_expression -> while ( expression ) statement
-//                       | while ( expression ) { current_scope }
-//         expression -> assignment 
-//                       | bin_op_exression
-//                       | print 
-//                       | ? 
-//              print -> print expression
-//                  ? -> input number
-//         assignment -> variable = expression
-//  bin_op_expression -> bin_op_expression bin_op subexpr 
-//                       | subexpr
-//            subexpr -> terminal 
-//                       | ( expression )
-//           terminal -> number 
-//                       | variable 
-//           variable -> id 
+//      Current paraCL grammar 
+//      (it will probably be modified and updated in the future) :
+//             statements -> empty 
+//                           | statements substmnt  
+//               substmnt -> statement
+//                           | { scope }
+//                           | empty_statement;
+//        empty_statement -> empty
+//                  scope -> empty
+//                           | scope substmnt
+//              statement -> expression_wrapper; 
+//                           | if_expression 
+//                           | while_expression 
+//          if_expression -> if ( expression ) substmnt
+//       while_expression -> while ( expression ) substmnt
+//     expression_wrapper -> expression
+//             expression -> assignment 
+//                           | arithmetic_exression
+//                           | print 
+//             assignment -> variable = expression
+//                           | variable = input
+//                  input -> ?
+//                  print -> print expression
+//  arithmetic_expression -> arithmetic_expression bin_op arithmetic_expression 
+//                           | subexpr
+//                subexpr -> terminal 
+//                           | ( expression )
+//               terminal -> number 
+//                           | variable 
+//               variable -> id 
 //
 //-------------------------------------------------------------------------------------------------
 %language "c++"
