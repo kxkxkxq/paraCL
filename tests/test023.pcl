@@ -1,0 +1,10 @@
+{
+    print m;
+    {
+        m = 2;
+        n = 3;
+        k = 4;
+        print k;
+    }
+    print n;
+}

@@ -1,0 +1,16 @@
+fib1 = 1;
+fib2 = 1;
+n = 10;
+i = 0;
+
+print fib1;
+print fib2;
+
+while(i < n - 2)
+{
+    fibSum = fib1 + fib2;
+    print fibSum;
+    fib1 = fib2;
+    fib2 = fibSum;
+    i = i + 1;
+}
