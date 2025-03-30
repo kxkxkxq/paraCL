@@ -18,7 +18,6 @@ namespace ast
 //      TYPES        
     enum class BinOpType
     {
-        ASSIGN,
         MINUS,
         PLUS,
         DIV,
@@ -58,9 +57,10 @@ namespace ast
     {
         int number_;
 
-    public :
+    public:
         NumberNode() : ExpressionINode{} {}
         NumberNode(const int n) : ExpressionINode{}, number_(n) {}
+        
         int execute() override { return number_; } 
 
         void set_value(const int n) { number_ = n; }
@@ -72,25 +72,45 @@ namespace ast
         std::string id_;
         int value_;
 
-    public :
+    public:
         VariableNode(const std::string i) : ExpressionINode{}, id_(i) { }
+        
         int execute() override { return value_; }
+        
+        std::string get_id() const { return id_; } 
         void set_value(const int v) { value_ = v; } 
     };
 
     class CurrentScopeNode : public StatementINode
     {
-        CurrentScopeNode* parent_ = nullptr;
         std::map<std::string, VariableNode*> context_;  //  symbol table for current scope
         std::vector<StatementINode*> curScope_;
 
     public:
-        CurrentScopeNode(CurrentScopeNode* p) : StatementINode{}, parent_(p) {}
         CurrentScopeNode() : StatementINode{} {}
-        CurrentScopeNode* get_parent_scope() { return parent_; }
 
-        void add_to_context(VariableNode* v) { /*....*/ }
-        bool is_declared(const std::string id) { return (context_.find(id) == context_.end()); }
+        void add_to_context(VariableNode* var) 
+        { 
+            assert(var);
+            context_.insert({var->get_id(), var});
+            assert(context_.find(var->get_id()) != context_.end());
+            assert(context_.find(var->get_id())->second == var);
+        }        
+
+        bool is_declared(const std::string id) const 
+        {  
+            if(context_.find(id) == context_.end()) 
+                return false;
+            return true;
+        }
+
+        VariableNode* get_variable(std::string id)
+        {
+            auto iter = context_.find(id);
+            assert(iter != context_.end());
+            return iter->second;
+        }
+        
         void add_statement(StatementINode* s) 
         { 
             StatementINode* tmp = s;
@@ -113,30 +133,36 @@ namespace ast
     {
         ExpressionINode* expr_ = nullptr;
 
-    public :
+    public:
         ExpressionWrapper(ExpressionINode* e) : StatementINode{}, expr_(e) { }
         void execute() override {  assert(expr_) ; expr_->execute(); }
     };
-
+    
     class StatementWrapper final : public StatementINode
     {
         StatementINode* stmnt_ = nullptr;
 
-    public :
+    public:
         StatementWrapper(StatementINode* s) : StatementINode{}, stmnt_(s) { }
         void execute() override {  assert(stmnt_) ; stmnt_->execute(); }
     };
-    
+
+    class EmptyStatement final : public StatementINode
+    {
+    public:
+        EmptyStatement() : StatementINode{} {}
+        void execute() override { return; }
+    };
 
     class ArithmExprWrapper : public ExpressionINode
     {
         ExpressionINode* expr_ = nullptr;
 
-    public :
+    public:
         ArithmExprWrapper(ExpressionINode* e) : ExpressionINode{}, expr_(e) { }
         int execute() override { return expr_->execute(); }
     };
-    
+
     class BinOpNode final : public ExpressionINode
     {
         ExpressionINode* leftExpr_ = nullptr;
@@ -152,37 +178,57 @@ namespace ast
         { 
             assert(leftExpr_);
             assert(rightExpr_);
-            leftExpr_->execute(); 
-            rightExpr_->execute();
-#if 0            
-            switch(BinOpType):
+            int lExprRes = leftExpr_->execute(); 
+            int rExprRes = rightExpr_->execute();
+
+            switch(opType_)
             {
-                case :
-            }
-#endif            
+                case BinOpType::MINUS:    return lExprRes  - rExprRes;
+                case BinOpType::PLUS:     return lExprRes  + rExprRes;
+                case BinOpType::DIV:      return lExprRes  / rExprRes;
+                case BinOpType::MUL:      return lExprRes  * rExprRes;
+                case BinOpType::LESS:     return lExprRes  < rExprRes;
+                case BinOpType::GREATER:  return lExprRes  > rExprRes;
+                case BinOpType::EQUAL:    return lExprRes == rExprRes;
+                case BinOpType::LEQUAL:   return lExprRes <= rExprRes;
+                case BinOpType::GEQUAL:   return lExprRes >= rExprRes;
+                case BinOpType::NEQUAL:   return lExprRes != rExprRes;
+            }            
         }
     };
     
     class IfExpressionNode final : public StatementINode
     {
         ExpressionINode* expr_ = nullptr;
-        CurrentScopeNode* scope_ = nullptr;
+        StatementWrapper* ifScope_ = nullptr;
 
     public:
-        IfExpressionNode(ExpressionINode* e, CurrentScopeNode* s) : StatementINode{}, 
-                                                                    expr_(e), scope_(s) {}
-        void execute() override { expr_->execute(); }
+        IfExpressionNode(ExpressionINode* e, StatementWrapper* s) : StatementINode{}, 
+                                                                    expr_(e), ifScope_(s) {}
+        void execute() override 
+        {
+            assert(expr_);
+            assert(ifScope_);
+            if(expr_->execute())
+                ifScope_->execute();
+        }
     };
 
     class WhileExpressionNode final : public StatementINode
     {
         ExpressionINode* expr_ = nullptr;
-        CurrentScopeNode* scope_ = nullptr;
+        StatementWrapper* whileScope_ = nullptr;
 
     public:
-        WhileExpressionNode(ExpressionINode* e, CurrentScopeNode* s) : StatementINode{}, 
-                                                                       expr_(e), scope_(s) {}
-        void execute() override { expr_->execute(); }
+        WhileExpressionNode(ExpressionINode* e, StatementWrapper* s) : StatementINode{}, 
+                                                                       expr_(e), whileScope_(s) {}
+        void execute() override 
+        { 
+            assert(expr_);
+            assert(whileScope_);
+            while(expr_->execute())
+                whileScope_->execute(); 
+        }
     };
 
     class AssignExpressionNode final : public ExpressionINode
@@ -190,7 +236,7 @@ namespace ast
         VariableNode* var_ = nullptr;
         ExpressionINode* expr_ = nullptr;
 
-        public :
+    public:
         AssignExpressionNode(VariableNode* v, ExpressionINode* e) : ExpressionINode{}, 
                                                                     var_(v), expr_(e) {}
         int execute()
@@ -207,8 +253,9 @@ namespace ast
     {
         ExpressionINode* expr_ = nullptr;
 
-    public :
+    public:
         PrintNode(ExpressionINode* e) : ExpressionINode{}, expr_(e) {}
+        
         int execute() 
         { 
             assert(expr_);
@@ -222,10 +269,12 @@ namespace ast
     {
         NumberNode* value_ = nullptr;
 
-        public :
+    public:
         InputNode(NumberNode* n) : ExpressionINode{}, value_(n) {}
+        
         int execute() override
         {
+            assert(value_);
             int number;
             std::cin >> number;
             value_->set_value(number);
