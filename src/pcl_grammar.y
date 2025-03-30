@@ -94,6 +94,7 @@ CurrentScopeNode* currScope = nullptr;
 
 %token <int> NUMBER
 %token <std::string> ID
+%nterm <EmptyStatement*> empty_statement
 %nterm <NumberNode*> number
 %nterm <CurrentScopeNode*> statements 
 %nterm <CurrentScopeNode*> scope
@@ -111,8 +112,9 @@ CurrentScopeNode* currScope = nullptr;
 %nterm <ExpressionINode*> terminal
 %nterm <VariableNode*> variable 
 
-%left '-' '+'
-%left '/' '*'
+%left LESS GREATER EQUAL LEQUAL GEQUAL NEQUAL
+%left MINUS PLUS
+%left DIV MUL
 
 
 %start program
@@ -131,87 +133,105 @@ statements: %empty               { $$ = driver->make_node<CurrentScopeNode>();
                                    $$->add_statement($2); }
 ;
 
-substmnt: statement SCOLON  { $$ = driver->make_node<StatementWrapper>($1); }
-        | LCBR scope   RCBR {  $$ = driver->make_node<StatementWrapper>($2); }
+substmnt: statement               { $$ = driver->make_node<StatementWrapper>($1); }
+        | LCBR scope RCBR         { $$ = driver->make_node<StatementWrapper>($2);
+                                    driver->ascend_from_scope(); }
+        | empty_statement SCOLON  { $$ = driver->make_node<StatementWrapper>($1); }
 ;
 
-scope: %empty          { $$ = driver->make_node<CurrentScopeNode>(); }
+empty_statement: %empty  { $$ = driver->make_node<EmptyStatement>(); }
+;
+
+scope: %empty          { $$ = driver->make_node<CurrentScopeNode>();
+                         driver->descend_into_scope($$); }
      | scope substmnt  { assert($1);
                          assert($2);
                          $$ = $1;
                          $$->add_statement($2); }
 ;
 
-statement: expression_wrapper  { $$ = $1; }
+statement: expression_wrapper SCOLON  { $$ = $1; }
+         | if_expression              { $$ = $1; }
+         | while_expression           { $$ = $1; }
 ;
 
-//-------------------------------------------------------------------------------------------------
-    //  obsolete
-/*
-if_expression: IF LPAREN expression RPAREN scope  {  $5 = driver->make_node<CurrentScopeNode>();
-                                                     driver->descend_into_scope($5);
-                                                     $$ = driver->make_node<IfExpressionNode>($3, $5); 
-                                                     driver->ascend_from_scope(); }
+if_expression: IF LPAREN expression RPAREN substmnt  { $$ = driver->make_node<IfExpressionNode>($3, $5); } 
 ;
 
-scope: %empty                       { $$ = driver->make_node<CurrentScopeNode>(); 
-                                      assert($$);
-                                      driver->descend_into_scope($$); 
-                                      assert($$); }
-     | statement SCOLON scope       { $$ = $3;
-                                      assert($$); 
-                                      $$->add_statement($1);
-                                      assert($$); }
-                            
+while_expression: WHILE LPAREN expression RPAREN substmnt  { $$ = driver->make_node<WhileExpressionNode>($3, $5); } 
 ;
-*/
-//-------------------------------------------------------------------------------------------------
-
-
-
-
-
 
 expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1); }
 ;
-
 
 expression: assignment             { $$ = $1; }
           | arithmetic_expression  { $$ = $1; }
           | print                  { $$ = $1; }
 ;
 
-assignment: variable ASSIGN expression  { $$ = driver->make_node<AssignExpressionNode>($1, $3); }
+assignment: variable ASSIGN expression  { $$ = driver->make_node<AssignExpressionNode>($1, $3);
+                                          driver->add_to_context($1); }
           | variable ASSIGN input       { $$ = driver->make_node<AssignExpressionNode>($1, $3); }
 ;
 
-input: INPUT number { $$ = driver->make_node<InputNode>($2); }
+input: INPUT { NumberNode* number = driver->make_node<NumberNode>();
+               $$ = driver->make_node<InputNode>(number); }
 ;
 
 print: PRINT expression { $$ = driver->make_node<PrintNode>($2); }
 ;
 
-arithmetic_expression: arithmetic_expression MINUS subexpr    { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MINUS);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression PLUS subexpr     { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::PLUS);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); }
-                     | arithmetic_expression DIV subexpr      { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::DIV);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression MUL subexpr      { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MUL);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression LESS subexpr     { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::LESS);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression GREATER subexpr  { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GREATER);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression EQUAL subexpr    { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::EQUAL);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression LEQUAL subexpr   { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::LEQUAL);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression GEQUAL subexpr   { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GEQUAL);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); } 
-                     | arithmetic_expression NEQUAL subexpr   { BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::NEQUAL);
-                                                                $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); }                      
-                     | subexpr                                { $$ = driver->make_node<ArithmExprWrapper>($1); }
+arithmetic_expression: arithmetic_expression MINUS arithmetic_expression  %prec MINUS  
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MINUS);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       } 
+                     | arithmetic_expression PLUS arithmetic_expression %prec PLUS    
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::PLUS);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       }
+                     | arithmetic_expression DIV arithmetic_expression %prec DIV      
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::DIV);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       } 
+                     | arithmetic_expression MUL arithmetic_expression %prec MUL      
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MUL);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       } 
+                     | arithmetic_expression LESS arithmetic_expression %prec LESS     
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::LESS);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr));
+                       } 
+                     | arithmetic_expression GREATER arithmetic_expression %prec GREATER
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GREATER);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr));
+                       } 
+                     | arithmetic_expression EQUAL arithmetic_expression %prec EQUAL   
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::EQUAL);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       } 
+                     | arithmetic_expression LEQUAL arithmetic_expression %prec LEQUAL
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::LEQUAL);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       } 
+                     | arithmetic_expression GEQUAL arithmetic_expression %prec GEQUAL
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GEQUAL);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       } 
+                     | arithmetic_expression NEQUAL arithmetic_expression %prec NEQUAL
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::NEQUAL);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       }                      
+                     | subexpr { $$ = driver->make_node<ArithmExprWrapper>($1); }
 ;
 
 subexpr: terminal                  { $$ = $1; }
@@ -226,99 +246,9 @@ terminal: number    { $$ = $1; }
 number: NUMBER { $$ = driver->make_node<NumberNode>($1); }
 ;
 
-variable: ID  { $$ = driver->make_node<VariableNode>($1); }
+variable: ID  { $$ = driver->make_or_assign<VariableNode>($1); 
+                driver->add_to_context($$); } 
 ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-//-------------------------------------------------------------------------------------------------
-    //  obsolete
-/*
-program: statements  { driver->insert_current_scope($1);}
-;
-
-statements: statement SCOLON statements  { $$ = $3; $$->add_statement($1); }
-               //| LCBR current_scope RCBR       { $$ = $2; }
-               | statement SCOLON              { std::cout << "2"; $$->add_statement($1); }
-;
-
-statement: expression_wrapper      { $$ = $1; }
-         | if_expression           { $$ = $1; }
-         | while_expression        { $$ = $1; }
-;
-
-if_expression: IF LPAREN expression RPAREN scope  { 
-                                                     CurrentScopeNode* scope = make_node<CurrentScopeNode>(nullptr);
-                                                     $$ = make_node<IfExpressionNode>($3, scope); 
-                                                  }
-;
-
-
-
-while_expression: WHILE LPAREN expression RPAREN statement                { 
-                                                                            CurrentScopeNode* scope = make_node<CurrentScopeNode>(nullptr);        
-                                                                            $$ = make_node<WhileExpressionNode>($3, scope);
-                                                                          }
-;
-
-scope: statement             { std::cout << "scope" << std::endl; }
-     | LCBR statements RCBR  {  std::cout << "scope" << std::endl; }
-
-expression_wrapper: expression  { $$ = make_node<ExpressionWrapper>($1); }
-;
-
-expression: assignment             { $$ = $1; }
-          | arithmetic_expression  { $$ = $1; }
-          | print                  { $$ = $1; }
-          | input                  { $$ = $1; }
-          | terminal               { $$ = $1; }
-;
-
-print: PRINT expression { $$ = make_node<PrintNode>($2); }
-;
-
-input: INPUT NUMBER  { $$ = make_node<InputNode>(make_node<NumberNode>($2)); }
-;
-
-
-assignment: variable ASSIGN expression  { $$ = make_node<AssignExpressionNode>($1, $3); }
-;
-
-arithmetic_expression: arithmetic_expression MINUS   subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::MINUS); }
-                     | arithmetic_expression PLUS    subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::PLUS); }
-                     | arithmetic_expression DIV     subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::DIV); }
-                     | arithmetic_expression MUL     subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::MUL); }
-                     | arithmetic_expression LESS    subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::LESS); }
-                     | arithmetic_expression GREATER subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::GREATER); }
-                     | arithmetic_expression EQUAL   subexpr   { $$ = make_node<BinOpNode>($1, $3, BinOpType::EQUAL); }
-                     | arithmetic_expression LEQUAL   subexpr  { $$ = make_node<BinOpNode>($1, $3, BinOpType::LEQUAL); }
-                     | arithmetic_expression GEQUAL   subexpr  { $$ = make_node<BinOpNode>($1, $3, BinOpType::GEQUAL); }                      
-                     | arithmetic_expression NEQUAL   subexpr  { $$ = make_node<BinOpNode>($1, $3, BinOpType::NEQUAL); } 
-                     | subexpr                                 { $$ = $1; }                   
-
-
-subexpr: terminal                             { $$ = $1; }
-       | LPAREN arithmetic_expression RPAREN  { $$ = $2; }
-;
-
-terminal: NUMBER    { $$ = make_node<NumberNode>($1); }
-        | variable  { $$ = $1; }
-;
-
-variable: ID  { $$ = make_node<VariableNode>($1); }
-;
-*/
-//-------------------------------------------------------------------------------------------------
 
 %%
 
