@@ -28,10 +28,13 @@ namespace yyproxy
     else if (curr_value == "/")  return yy::parser::token_type::DIV;
     else if (curr_value == "<")  return yy::parser::token_type::LESS;
     else if (curr_value == ">")  return yy::parser::token_type::GREATER;
+    else if (curr_value == "%")  return yy::parser::token_type::MOD;
     else if (curr_value == "<=") return yy::parser::token_type::LEQUAL; 
     else if (curr_value == ">=") return yy::parser::token_type::GEQUAL;
     else if (curr_value == "!=") return yy::parser::token_type::NEQUAL;
     else if (curr_value == "==") return yy::parser::token_type::EQUAL;
+    else if (curr_value == "&&") return yy::parser::token_type::AND;
+    else if (curr_value == "||") return yy::parser::token_type::OR;
     else return yy::parser::token_type::ERROR;
   }
 
@@ -64,12 +67,18 @@ namespace yyproxy
     std::string curr_lexem = "separator";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
-         if (curr_value == ";") return yy::parser::token_type::SCOLON;
-    else if (curr_value == "{") return yy::parser::token_type::LCBR;
+         if (curr_value == "{") return yy::parser::token_type::LCBR;
     else if (curr_value == "}") return yy::parser::token_type::RCBR;
     else if (curr_value == "(") return yy::parser::token_type::LPAREN;
     else if (curr_value == ")") return yy::parser::token_type::RPAREN;
     else return yy::parser::token_type::ERROR;
+  }
+
+  int process_scolon(const std::string& text) {
+    std::string curr_lexem = "scolon";
+    std::string curr_value = text;
+    print_lexem(curr_lexem, curr_value);
+    return yy::parser::token_type::SCOLON;
   }
 
   int process_unknown(const std::string& text) {
