@@ -70,16 +70,19 @@ CurrentScopeNode* currScope = nullptr;
 
 %token
     ASSIGN  
-    MINUS   
+    MINUS  
     PLUS    
     DIV     
     MUL     
     LESS    
-    GREATER 
+    GREATER
+    MOD 
     EQUAL
     LEQUAL
     GEQUAL
     NEQUAL
+    AND
+    OR
     SCOLON  
     LCBR
     RCBR    
@@ -116,9 +119,12 @@ CurrentScopeNode* currScope = nullptr;
 %nterm <ExpressionINode*> terminal
 %nterm <VariableNode*> variable 
 
+%left ASSIGN
+%left AND OR
 %left LESS GREATER EQUAL LEQUAL GEQUAL NEQUAL
 %left MINUS PLUS
-%left DIV MUL
+%left DIV MUL MOD
+%left UMINUS
 
 
 %start program
@@ -214,7 +220,12 @@ arithmetic_expression: arithmetic_expression MINUS arithmetic_expression  %prec 
                        { 
                             BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GREATER);
                             $$ = driver->make_node<ArithmExprWrapper>(std::move(expr));
-                       } 
+                       }
+                     | arithmetic_expression MOD arithmetic_expression %prec MOD
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MOD);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       }  
                      | arithmetic_expression EQUAL arithmetic_expression %prec EQUAL   
                        { 
                             BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::EQUAL);
@@ -234,8 +245,22 @@ arithmetic_expression: arithmetic_expression MINUS arithmetic_expression  %prec 
                        { 
                             BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::NEQUAL);
                             $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       }   
+                     | arithmetic_expression AND arithmetic_expression %prec AND
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::AND);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+                       }   
+                     | arithmetic_expression OR arithmetic_expression %prec OR
+                       { 
+                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::OR);
+                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
                        }                      
-                     | subexpr { $$ = driver->make_node<ArithmExprWrapper>($1); }
+                     | MINUS subexpr %prec UMINUS  
+                       { 
+                            $$ = driver->make_node<ArithmExprWrapper>($2, ast::BinOpType::MINUS); 
+                       }
+                     | subexpr  { $$ = driver->make_node<ArithmExprWrapper>($1); }
 ;
 
 subexpr: terminal                  { $$ = $1; }
@@ -258,11 +283,11 @@ variable: ID  { $$ = driver->make_or_assign<VariableNode>($1);
 
 namespace yy 
 {
-    parser::token_type yylex( parser::semantic_type* yylval,                         
+     parser::token_type yylex( parser::semantic_type* yylval,                         
                               Driver* driver )
-    {
-        return driver->yylex(yylval);
-    }
+     {
+          return driver->yylex(yylval);
+     }
 
-    void parser::error(const std::string&){}
+     void parser::error(const std::string&){ std::cerr << " ...." << std::endl; }
 }

@@ -24,10 +24,13 @@ namespace ast
         MUL,
         LESS,
         GREATER,
+        MOD,
         EQUAL,
         LEQUAL,
         GEQUAL,
-        NEQUAL
+        NEQUAL,
+        AND,
+        OR
     };
 
 //-------------------------------------------------------------------------------------------------
@@ -156,11 +159,19 @@ namespace ast
 
     class ArithmExprWrapper : public ExpressionINode
     {
-        ExpressionINode* expr_ = nullptr;
+        ExpressionINode* expr_;
+        bool exprSign_;
 
     public:
-        ArithmExprWrapper(ExpressionINode* e) : ExpressionINode{}, expr_(e) { }
-        int execute() override { return expr_->execute(); }
+        ArithmExprWrapper(ExpressionINode* e = nullptr, 
+                          BinOpType s = ast::BinOpType::PLUS) : ExpressionINode{}, 
+                                                                expr_(e),
+                                                                exprSign_(static_cast<bool>(s)) {}
+        int execute() override 
+        { 
+            assert(expr_);
+            return (exprSign_) ? expr_->execute() : -(expr_->execute()); 
+        }
     };
 
     class BinOpNode final : public ExpressionINode
@@ -189,14 +200,18 @@ namespace ast
                 case BinOpType::MUL:      return lExprRes  * rExprRes;
                 case BinOpType::LESS:     return lExprRes  < rExprRes;
                 case BinOpType::GREATER:  return lExprRes  > rExprRes;
+                case BinOpType::MOD:      return lExprRes  % rExprRes;
                 case BinOpType::EQUAL:    return lExprRes == rExprRes;
                 case BinOpType::LEQUAL:   return lExprRes <= rExprRes;
                 case BinOpType::GEQUAL:   return lExprRes >= rExprRes;
                 case BinOpType::NEQUAL:   return lExprRes != rExprRes;
-            }            
+                case BinOpType::AND:      return lExprRes && rExprRes;
+                case BinOpType::OR:       return lExprRes || rExprRes;
+            } 
+            return 0;  // TODO: throw error        
         }
     };
-    
+
     class IfExpressionNode final : public StatementINode
     {
         ExpressionINode* expr_ = nullptr;
