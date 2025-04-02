@@ -1,8 +1,11 @@
 %option c++
+%option yylineno
+%option yyclass="yy::Lexer"
 
 %{
-
+    
 #include "lexer.hpp"
+#define YY_USER_ACTION update_current_location();
 
 %}
 
@@ -11,19 +14,19 @@ DIGIT   [0-9]
 DIGIT1  [1-9]
 OP      [\+\-\=\*\/\<\>\%]
 SEP     [\{\}\(/)]
-SCOLON  ";"({WS}*";"*)*
+SCOLON  ";"+
 NUMBER  {DIGIT1}{DIGIT}*|0
 ID      [a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
 {WS}                                //  skip
-{OP}|"<="|">="|"!="|"=="|"&&"|"||"  { return yyproxy::process_operator(yytext); }
-{NUMBER}                            { return yyproxy::process_number(yytext); }
-"print"|"if"|"while"|"?"            { return yyproxy::process_keyword(yytext); }
-{ID}                                { return yyproxy::process_identifier(yytext); }
-{SEP}                               { return yyproxy::process_separator(yytext); }
-{SCOLON}                            { return yyproxy::process_scolon(yytext); }
-.                                   { return yyproxy::process_unknown(yytext); }
+{OP}|"<="|">="|"!="|"=="|"&&"|"||"  { return yy::process_operator(yytext); }
+{NUMBER}                            { return yy::process_number(yytext); }
+"print"|"if"|"while"|"?"            { return yy::process_keyword(yytext); }
+{ID}                                { return yy::process_identifier(yytext); }
+{SEP}                               { return yy::process_separator(yytext); }
+{SCOLON}                            { return yy::process_scolon(yytext); }
+.                                   { return yy::process_unknown(yytext); }
 
-%%
+%%  //  nothing

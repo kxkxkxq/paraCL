@@ -1,8 +1,3 @@
-//-------------------------------------------------------------------------------------------------
-//
-//  Auxiliary functions for processing incoming lexemes
-//
-//-------------------------------------------------------------------------------------------------
 #pragma once
 
 #include <iostream>
@@ -10,14 +5,40 @@
 
 #include "pcl_grammar.tab.hh"
 
-namespace yyproxy
+namespace yy
 {
+  class Lexer final : public yyFlexLexer
+  {
+      parser::location_type currentLocation_;
+  
+  public:
+      void update_current_location()
+      {
+        std::string lexem = YYText();
+        if (lexem == "\n")
+        {
+          currentLocation_.end.column = 1;
+          currentLocation_.end.line = yylineno;
+        }
+        else
+          currentLocation_.end.column += yyleng;
+        currentLocation_.step();
+      }
 
-  void print_lexem(std::string l, std::string v) {
+      parser::location_type& get_current_location()
+      {
+        return currentLocation_;
+      }
+
+      int yylex();
+  };
+  
+//  AUXILIARY FUNCTIONS FOR PROCESSING INCOMING LEXEMES  
+  inline void print_lexem(std::string l, std::string v) {
     std::cout << ">> lexer read " << l << " [" << v << "]\n";
   }
 
-  int process_operator(const std::string& text) {
+  inline int process_operator(const std::string& text) {
     std::string curr_lexem = "operator";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
@@ -38,14 +59,14 @@ namespace yyproxy
     else return yy::parser::token_type::ERROR;
   }
 
-  int process_number(const std::string& text) {
+  inline int process_number(const std::string& text) {
     std::string curr_lexem = "number";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
     return yy::parser::token_type::NUMBER;
   }
 
-  int process_keyword(const std::string& text) {
+  inline int process_keyword(const std::string& text) {
     std::string curr_lexem = "keyword";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
@@ -56,14 +77,14 @@ namespace yyproxy
     else return yy::parser::token_type::ERROR;
   }
 
-  int process_identifier(const std::string& text) {
+  inline int process_identifier(const std::string& text) {
     std::string curr_lexem = "identifier";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
     return yy::parser::token_type::ID;
   }
 
-  int process_separator(const std::string& text) {
+  inline int process_separator(const std::string& text) {
     std::string curr_lexem = "separator";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
@@ -74,14 +95,14 @@ namespace yyproxy
     else return yy::parser::token_type::ERROR;
   }
 
-  int process_scolon(const std::string& text) {
+  inline int process_scolon(const std::string& text) {
     std::string curr_lexem = "scolon";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);
     return yy::parser::token_type::SCOLON;
   }
 
-  int process_unknown(const std::string& text) {
+  inline int process_unknown(const std::string& text) {
     std::string curr_lexem = "unknown";
     std::string curr_value = text;
     print_lexem(curr_lexem, curr_value);

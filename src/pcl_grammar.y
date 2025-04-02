@@ -24,6 +24,7 @@
 //                  input -> ?
 //                  print -> print expression
 //  arithmetic_expression -> arithmetic_expression bin_op arithmetic_expression 
+//                           | - subexpr 
 //                           | subexpr
 //                subexpr -> terminal 
 //                           | ( expression )
@@ -37,6 +38,10 @@
 %skeleton "lalr1.cc"
 %defines
 %define api.value.type variant
+
+%define parse.error verbose
+%locations
+
 %param {yy::Driver* driver}
 
 %code requires
@@ -51,9 +56,9 @@ using namespace ast;
 
 namespace yy  
 {
-    class Driver;   //  <-- forvard decl of Driver
+    class Driver; 
 }  
-}   //  requires
+}  //  requires
 
 %code 
 {
@@ -61,11 +66,11 @@ namespace yy
 
 namespace yy
 {
-    parser::token_type yylex( parser::semantic_type* yylval,                         
-                              Driver* driver );
+     parser::token_type yylex( parser::semantic_type* yylval,                         
+                               parser::location_type* loc,
+                               Driver* driver );
 }
 
-CurrentScopeNode* currScope = nullptr;
 }   //  code
 
 %token
@@ -147,6 +152,7 @@ substmnt: statement               { $$ = driver->make_node<StatementWrapper>($1)
         | LCBR scope RCBR         { $$ = driver->make_node<StatementWrapper>($2);
                                     driver->ascend_from_scope(); }
         | empty_statement SCOLON  { $$ = driver->make_node<StatementWrapper>($1); }
+        | error SCOLON            { }
 ;
 
 empty_statement: %empty  { $$ = driver->make_node<EmptyStatement>(); }
@@ -283,11 +289,16 @@ variable: ID  { $$ = driver->make_or_assign<VariableNode>($1);
 
 namespace yy 
 {
-     parser::token_type yylex( parser::semantic_type* yylval,                         
-                              Driver* driver )
+     parser::token_type yylex( parser::semantic_type* yylval,
+                               parser::location_type* yylloc,                         
+                               Driver* driver )
      {
-          return driver->yylex(yylval);
+          *yylloc = driver->get_current_location();
+          return driver->yylex(yylloc, yylval);
      }
 
-     void parser::error(const std::string&){ std::cerr << " ...." << std::endl; }
+     void parser::error(const parser::location_type& loc, const std::string& errorMessage)
+     { 
+          std::cerr << loc.begin.line << ":" << loc.begin.column << ": " << errorMessage << std::endl; 
+     }
 }
