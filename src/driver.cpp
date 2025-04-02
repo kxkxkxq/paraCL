@@ -4,6 +4,7 @@
 #include "string"
 
 #include "driver.hpp"
+#include "lexer.hpp"
 
 int yyFlexLexer::yywrap() { return 1; }
 
@@ -35,11 +36,9 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    FlexLexer *lexer = new yyFlexLexer;
-    lexer->switch_streams(&InputFile, &std::cout);
-    yy::Driver driver{lexer};
+    yy::Driver driver{};
+    driver.set_input_stream(InputFile);
     
     driver.parse();
     driver.execute();
-    delete lexer;
 }

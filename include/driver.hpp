@@ -8,14 +8,15 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include <stack>
 #include <type_traits>
 #include <utility>
 #include <vector>
-
 #include <FlexLexer.h>
 
 #include "node.hpp"
+#include "lexer.hpp"
 #include "ast_builder.hpp"
 #include "pcl_grammar.tab.hh"
 
@@ -23,29 +24,35 @@ namespace yy
 {
     class Driver final
     {
-        FlexLexer *pLexer_;
+        Lexer lexer_;
         ast::Builder astBuilder_;
-        ast::CurrentScopeNode* ast_;
+        ast::CurrentScopeNode* ast_ = nullptr;
         std::vector<CurrentScopeNode*> scopeStorage; 
 
     public :
-        Driver(FlexLexer *l) : pLexer_(l) {};
+        Driver() = default;
         
-        parser::token_type yylex(parser::semantic_type *yyval)
+        parser::token_type yylex(parser::location_type* yylloc, parser::semantic_type* yyval)
         {
-            parser::token_type tokenType = static_cast<parser::token_type>(pLexer_->yylex());
-            
+            parser::token_type tokenType = static_cast<parser::token_type>(lexer_.yylex());
+
             if (tokenType == yy::parser::token_type::NUMBER)
             {
-                yyval->as<int>() = std::stoi(pLexer_->YYText());   
+                yyval->as<int>() = std::stoi(lexer_.YYText());   
                 return tokenType;
             }
             if (tokenType == yy::parser::token_type::ID)
             {
-                yyval->emplace<std::string>(pLexer_->YYText());
+                yyval->emplace<std::string>(lexer_.YYText());
                 return tokenType; 
             }
             return tokenType;
+        }
+
+        void set_input_stream(std::istream& inputStream)
+        {
+            assert(inputStream);
+            lexer_.switch_streams(&inputStream, &std::cout);
         }
 
         bool parse()
@@ -54,6 +61,8 @@ namespace yy
             bool res = parser.parse();
             return !res;
         }
+
+        parser::location_type& get_current_location() { return lexer_.get_current_location(); }
 
         void set_ast_root(CurrentScopeNode* curScope)
         {
@@ -88,14 +97,7 @@ namespace yy
         void add_to_context(VariableNode* var)
         {
             assert(var);
-            try
-            {
-                scopeStorage.back()->add_to_context(var);
-            }
-            catch(...)
-            {
-                //  
-            }
+            scopeStorage.back()->add_to_context(var);
         }
         
         VariableNode* find_variable(const std::string id) const
