@@ -4,18 +4,20 @@ The goal is to develop frontend and simulator of this language
 
 ## Example Program
 ```paraCL
-// Computes n-th Fibonacci number
+// Computes n Fibonacci numbers
 a = 0;
 b = 1;
+i = 0
 n = ?; // Input from user
 
-while (n > 0) {
-  temp = a;
+while (i < n) 
+{
+  print a;
+  temp = a + b;
   a = b;
-  b = b + temp;
-  n = n - 1;
+  b = temp;
+  i = i + 1;
 }
-print b;
 ```
 
 [Progress and Internals](./DEVELOPMENT.md)

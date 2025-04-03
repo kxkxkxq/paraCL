@@ -2,7 +2,7 @@
 
 ### Lexer
 - Implemented token recognition for:
-  - Keywords: `if`, `while`, `print`
+  - Keywords: `if`, `while`, `print`, `?`
   - Identifiers: ASCII alphabetic names
   - Literals: integer constants
   - Operators: 
@@ -19,10 +19,8 @@
   - Basic I/O operations:
     - Input statement: `variable = ?;`
     - Output statement: `print expression;`
-
-- In development:
   - Control flow structures:
-    - Conditional statements (`if-else`)
+    - Conditional statements (`if`)
     - Loop statements (`while`)
   - Symbol table management
   - Error diagnostics system
@@ -33,9 +31,6 @@
   - All arithmetic operations
   - Variable assignments
   - Print statements
-
-- Pending implementation:
   - Control flow simulation
   - Input statement processing
   - Runtime diagnostics
-  - Advanced debugging features
