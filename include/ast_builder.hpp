@@ -23,7 +23,7 @@ namespace ast
         NodeType* make_node(Args&&... args)
         {
             astBuffer_.emplace_back(std::make_unique<NodeType>(args ...));
-            assert(astBuffer_.front());
+            assert(astBuffer_.back());
             return static_cast<NodeType*>((astBuffer_.back()).get());
         }
     };

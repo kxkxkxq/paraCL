@@ -24,6 +24,7 @@ namespace yy
 {
     class Driver final
     {
+        bool isExecutable_ = true;
         Lexer lexer_;
         ast::Builder astBuilder_;
         ast::CurrentScopeNode* ast_ = nullptr;
@@ -77,11 +78,6 @@ namespace yy
 
         void descend_into_scope(CurrentScopeNode* currScope)
         {
-            std::cerr << "descend_into_scope()" << std::endl;
-            std::cerr << "!!  DEBUG INFO : " << std::endl;
-            if(!scopeStorage.empty())
-                std::cerr << "previous scope : " << scopeStorage.back() << std::endl;
-            std::cerr << "current scope : " << currScope << std::endl;
             assert(currScope);
             scopeStorage.emplace_back(currScope);
             assert(currScope == scopeStorage.back());
@@ -89,7 +85,6 @@ namespace yy
 
         void ascend_from_scope()
         {
-            std::cerr << "ascend_from_scope()" << std::endl;
             assert(!scopeStorage.empty());
             scopeStorage.pop_back();
         }
@@ -99,7 +94,10 @@ namespace yy
             assert(var);
             scopeStorage.back()->add_to_context(var);
         }
-        
+
+        void set_executable_status(const bool status) noexcept { isExecutable_ = status; } 
+        bool is_executable() const noexcept { return isExecutable_; }
+
         VariableNode* find_variable(const std::string id) const
         {
             auto is_declared = [&id] (CurrentScopeNode* sc) { return sc->is_declared(id); };

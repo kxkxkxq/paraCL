@@ -10,35 +10,48 @@ int yyFlexLexer::yywrap() { return 1; }
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2)
-    {  
-        std::cout << "error: " << std::endl;
-        switch(argc < 2)
-        {
-            case true:   std::cout << "no input files" << std::endl;
-                         break;
-            
-            case false:  std::cout << "too many arguments: ";
-                         for(int n = 1; n < argc; ++n)
-                            std::cout << argv[n] << " ";
-                         std::cout << std::endl;
-                         break; 
-        }
-        return 0; 
-    }
-
-    std::string fileName(argv[1]);
-    std::ifstream InputFile(fileName);
-    if (!InputFile)
+    try
     {
-        std::cerr << "error: " << std::endl;
-        std::cerr << "cannot open " << fileName << std::endl;
-        return 0;
-    }
+        if(argc != 2)
+        {  
+            std::cout << "error: " << std::endl;
+            switch(argc < 2)
+            {
+                case true:   std::cout << "no input files" << std::endl;
+                             break;
 
-    yy::Driver driver{};
-    driver.set_input_stream(InputFile);
-    
-    driver.parse();
-    driver.execute();
+                case false:  std::cout << "too many arguments: ";
+                             for(int n = 1; n < argc; ++n)
+                                std::cout << argv[n] << " ";
+                             std::cout << std::endl;
+                             break; 
+            }
+            return 0; 
+        }
+
+        std::string fileName(argv[1]);
+        std::ifstream InputFile(fileName);
+        if (!InputFile)
+        {
+            std::cerr << "error: " << std::endl;
+            std::cerr << "cannot open " << fileName << std::endl;
+            return 0;
+        }
+
+        yy::Driver driver{};
+        driver.set_input_stream(InputFile);
+        driver.parse();
+        if(driver.is_executable())
+            driver.execute();
+    }
+    catch(std::exception& exptn)
+    {
+        std::cerr << exptn.what() << std::endl;
+        return 1;
+    }
+    catch(...)
+    {
+        std::cerr << "Undefined error" << std::endl;
+        return 1;
+    }
 }
