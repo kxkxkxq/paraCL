@@ -9,7 +9,8 @@
 
 %}
 
-WS      [ \t\n\r\v]+
+WS      [ \t\r\v]+
+NL      "\n"
 DIGIT   [0-9]
 DIGIT1  [1-9]
 OP      [\+\-\=\*\/\<\>\%]
@@ -20,6 +21,7 @@ ID      [a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
+{NL}                                
 {WS}                                //  skip
 {OP}|"<="|">="|"!="|"=="|"&&"|"||"  { return yy::process_operator(yytext); }
 {NUMBER}                            { return yy::process_number(yytext); }
