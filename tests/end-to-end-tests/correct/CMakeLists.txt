@@ -7,12 +7,12 @@ file(GLOB TEST_FILES "${CMAKE_SOURCE_DIR}/tests/end-to-end-tests/correct/data/*.
 foreach(TEST_FILE ${TEST_FILES})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
     add_test(
-        NAME ${TEST_NAME}
+        NAME correct_${TEST_NAME}
         COMMAND python3 ${PYTHON_SCRIPT_RUN} ${TEST_NAME}.pcl
     )
 
     set_tests_properties(
-        ${TEST_NAME}
+        correct_${TEST_NAME}
         PROPERTIES
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     )
