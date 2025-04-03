@@ -39,6 +39,7 @@
 %defines
 %define api.value.type variant
 
+%define parse.lac full
 %define parse.error verbose
 %locations
 
@@ -50,6 +51,7 @@
 #include <iostream>
 #include <string>
 
+#include "error_report.hpp"
 #include "node.hpp"
 
 using namespace ast;
@@ -171,6 +173,7 @@ statement: expression_wrapper SCOLON  { $$ = $1; }
          | while_expression           { $$ = $1; }
 ;
 
+
 if_expression: IF LPAREN expression RPAREN substmnt  { $$ = driver->make_node<IfExpressionNode>($3, $5); } 
 ;
 
@@ -187,7 +190,8 @@ expression: assignment             { $$ = $1; }
 
 assignment: variable ASSIGN expression  { $$ = driver->make_node<AssignExpressionNode>($1, $3);
                                           driver->add_to_context($1); }
-          | variable ASSIGN input       { $$ = driver->make_node<AssignExpressionNode>($1, $3); }
+          | variable ASSIGN input       { $$ = driver->make_node<AssignExpressionNode>($1, $3);
+                                          driver->add_to_context($1); }
 ;
 
 input: INPUT { NumberNode* number = driver->make_node<NumberNode>();
@@ -197,7 +201,7 @@ input: INPUT { NumberNode* number = driver->make_node<NumberNode>();
 print: PRINT expression { $$ = driver->make_node<PrintNode>($2); }
 ;
 
-arithmetic_expression: arithmetic_expression MINUS arithmetic_expression  %prec MINUS  
+arithmetic_expression: arithmetic_expression MINUS arithmetic_expression  
                        { 
                             BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MINUS);
                             $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
@@ -273,16 +277,18 @@ subexpr: terminal                  { $$ = $1; }
        | LPAREN expression RPAREN  { $$ = $2; }
 ;
 
-
 terminal: number    { $$ = $1; }
-        | variable  { $$ = $1; }
+        | variable  { 
+                      $$ = $1;
+                      if(!driver->is_variable_declared($1->get_id())) 
+                         parser::error(@$, "'" + $1->get_id() + "' was not declared in this scope"); 
+                    }
 ;
 
 number: NUMBER { $$ = driver->make_node<NumberNode>($1); }
 ;
 
-variable: ID  { $$ = driver->make_or_assign<VariableNode>($1); 
-                driver->add_to_context($$); } 
+variable: ID  { $$ = driver->make_or_assign<VariableNode>($1); } 
 ;
 
 %%
@@ -299,6 +305,8 @@ namespace yy
 
      void parser::error(const parser::location_type& loc, const std::string& errorMessage)
      { 
-          std::cerr << loc.begin.line << ":" << loc.begin.column << ": " << errorMessage << std::endl; 
+          driver->set_executable_status(false);
+          std::string msg = errorreport::prepare_error_message(errorMessage);
+          std::cerr << loc.begin.line << ":" << loc.begin.column << ": " << msg << std::endl; 
      }
 }

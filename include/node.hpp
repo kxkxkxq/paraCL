@@ -196,11 +196,19 @@ namespace ast
             {
                 case BinOpType::MINUS:    return lExprRes  - rExprRes;
                 case BinOpType::PLUS:     return lExprRes  + rExprRes;
-                case BinOpType::DIV:      return lExprRes  / rExprRes;
+                case BinOpType::DIV:      {
+                                            if(rExprRes == 0) 
+                                                throw std::overflow_error("runtime error: division by zero"); 
+                                            return lExprRes  / rExprRes;
+                                          }
                 case BinOpType::MUL:      return lExprRes  * rExprRes;
                 case BinOpType::LESS:     return lExprRes  < rExprRes;
                 case BinOpType::GREATER:  return lExprRes  > rExprRes;
-                case BinOpType::MOD:      return lExprRes  % rExprRes;
+                case BinOpType::MOD:      {
+                                            if(rExprRes == 0) 
+                                                throw std::overflow_error("runtime error: division by zero"); 
+                                            return lExprRes  % rExprRes;
+                                          }
                 case BinOpType::EQUAL:    return lExprRes == rExprRes;
                 case BinOpType::LEQUAL:   return lExprRes <= rExprRes;
                 case BinOpType::GEQUAL:   return lExprRes >= rExprRes;
@@ -208,7 +216,7 @@ namespace ast
                 case BinOpType::AND:      return lExprRes && rExprRes;
                 case BinOpType::OR:       return lExprRes || rExprRes;
             } 
-            return 0;  // TODO: throw error        
+            throw std::runtime_error("impossible case during executing a binary operation");        
         }
     };
 
@@ -292,6 +300,14 @@ namespace ast
             assert(value_);
             int number;
             std::cin >> number;
+            if(std::cin.fail())
+            {
+                std::string buffer;
+                std::cin.clear();
+                std::cin >> buffer;
+                throw std::runtime_error("runtime error: incorrect input, unexpected '"
+                                         + buffer + "', expected integer number");
+            }
             value_->set_value(number);
             return value_->get_value();
         }
