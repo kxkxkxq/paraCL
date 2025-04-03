@@ -13,9 +13,9 @@ if(n >= 0)
         if (m % i == 0)
         {
             if(n <= 0)
-                print -i;
+                 -i;
             if(n > 0)
-                print i;
+                i;
         }
         i = i + 1;
     }

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 project(paraCL)
 
-set(PYTHON_SCRIPT_RUN "${CMAKE_SOURCE_DIR}/tests/end-to-end-tests/correct/run_tests.py")
-file(GLOB TEST_FILES "${CMAKE_SOURCE_DIR}/tests/end-to-end-tests/correct/data/*.pcl")
+set(PYTHON_SCRIPT_RUN "${CMAKE_SOURCE_DIR}/tests/end-to-end-tests/mustfail/run_tests.py")
+file(GLOB TEST_FILES "${CMAKE_SOURCE_DIR}/tests/end-to-end-tests/mustfail/data/*.pcl")
 
 foreach(TEST_FILE ${TEST_FILES})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
