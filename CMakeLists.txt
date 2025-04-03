@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(tests)
-message(STATUS "Tests directory added.")
 
 set (CMAKE_CXX_FLAGS_DEBUG "-Wall -g -O0 -fsanitize=address")
 set (CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
