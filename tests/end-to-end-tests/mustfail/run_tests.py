@@ -25,26 +25,23 @@ def run_single_test(test_file):
     input_file = f"{test_number}_input.dat"
     input_path = os.path.join(input_folder, input_file)
     
-    # Читаем входные данные (если файла нет, будет пустая строка)
     input_data = read_file(input_path)
 
-    # Передаём тестовый файл как аргумент командной строки
     args = [cpp_executable, test_path]
     try:
         result = subprocess.run(
             args,
-            input=input_data,  # Передаём входные данные через stdin
+            input=input_data, 
             text=True,
-            capture_output=True,  # Захватываем stdout и stderr
-            check=False  # Разрешаем ошибки выполнения
+            capture_output=True,  
+            check=False  
         )
-        program_stdout = result.stdout.strip()  # Убираем лишние пробелы и переносы строк
-        program_stderr = result.stderr.strip()  # Убираем лишние пробелы и переносы строк
+        program_stdout = result.stdout.strip()
+        program_stderr = result.stderr.strip()  
     except Exception as e:
         print(f"Error while testing test: {test_number}: {e}")
         sys.exit(1)
     
-    # Логика проверки
     if program_stdout != "" or program_stderr != "":
         print(f"Test {test_number}: passed (output detected)")
         sys.exit(0)
