@@ -21,13 +21,15 @@ while (i < n)
 
 ## Short description 
 The programme implements a frontend for paraCL, and also it a simulator. 
+
 After the input file has been correctly parse processed it is immediately executed.
+
 Also implemented diagnostics of errors in lexical, syntactic and semantic analysis and error reporting during the process of input file execution.
 
 ## How to install
 use 
 ```bush
-git clone git@github.com:kxkxkxq/paraCL.git/tree/dev
+git clone -b dev --single-branch git@github.com:kxkxkxq/paraCL
 
 cd ./paraCL/
 ```
