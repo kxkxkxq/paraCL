@@ -104,6 +104,7 @@ namespace yy
     PRINT
     WHILE 
     IF
+    ELSE
 ;
 
 %token <int> NUMBER
@@ -133,6 +134,8 @@ namespace yy
 %left DIV MUL MOD
 %left UMINUS
 
+%nonassoc IF_WITHOUT_ELSE
+%nonassoc ELSE
 
 %start program
 
@@ -174,8 +177,14 @@ statement: expression_wrapper SCOLON  { $$ = $1; }
 ;
 
 
-if_expression: IF LPAREN expression RPAREN substmnt  { $$ = driver->make_node<IfExpressionNode>($3, $5); } 
+if_expression: IF LPAREN expression RPAREN 
+                    substmnt %prec IF_WITHOUT_ELSE { $$ = driver->make_node<IfExpressionNode>($3, $5); } 
+             | IF LPAREN expression RPAREN 
+                    substmnt 
+               ELSE 
+                    substmnt  { $$ = driver->make_node<IfExpressionNode>($3, $5, $7); }
 ;
+
 
 while_expression: WHILE LPAREN expression RPAREN substmnt  { $$ = driver->make_node<WhileExpressionNode>($3, $5); } 
 ;
@@ -307,6 +316,6 @@ namespace yy
      { 
           driver->set_executable_status(false);
           std::string msg = errorreport::prepare_error_message(errorMessage);
-          std::cerr << loc.begin.line << ":" << loc.begin.column << ": " << msg << std::endl; 
+          std::cerr << loc.end.line << ":" << loc.end.column << ": " << msg << std::endl; 
      }
 }

@@ -69,6 +69,7 @@ namespace yy
     std::string curr_value = text;
          if (curr_value == "print") return yy::parser::token_type::PRINT;
     else if (curr_value == "if")    return yy::parser::token_type::IF;
+    else if (curr_value == "else")  return yy::parser::token_type::ELSE;
     else if (curr_value == "while") return yy::parser::token_type::WHILE;
     else if (curr_value == "?")     return yy::parser::token_type::INPUT;
     else return yy::parser::token_type::ERROR;

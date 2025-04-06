@@ -11,9 +11,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(tests)
 
-set (CMAKE_CXX_FLAGS_DEBUG "-Wall -g -O0 -fsanitize=address")
-set (CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
-
 set (CMAKE_CURRENT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 

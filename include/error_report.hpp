@@ -15,12 +15,13 @@ namespace errorreport
         {
                  if (buffer == "ERROR"   || buffer == "ERROR,")   { buffer = "stray token in program,"; }
             else if (buffer == "SCOLON"  || buffer == "SCOLON,")  { buffer = "';',"; }
-            else if (buffer == "LCBR"    || buffer == "LCBR,")    { buffer = "'(',"; }
-            else if (buffer == "RCBR"    || buffer == "RCBR,")    { buffer = "')',"; }
-            else if (buffer == "LPAREN"  || buffer == "LPAREN,")  { buffer = "'{',"; }
-            else if (buffer == "RPAREN"  || buffer == "RPAREN,")  { buffer = "'}',"; }
+            else if (buffer == "LCBR"    || buffer == "LCBR,")    { buffer = "'{',"; }
+            else if (buffer == "RCBR"    || buffer == "RCBR,")    { buffer = "'}',"; }
+            else if (buffer == "LPAREN"  || buffer == "LPAREN,")  { buffer = "'(',"; }
+            else if (buffer == "RPAREN"  || buffer == "RPAREN,")  { buffer = "')',"; }
             else if (buffer == "PRINT"   || buffer == "PRINT,")   { buffer = "'print',"; }
             else if (buffer == "IF"      || buffer == "IF,")      { buffer = "'if',"; }
+            else if (buffer == "ELSE"    || buffer == "ELSE,")    { buffer = "'else',"; }
             else if (buffer == "WHILE"   || buffer == "WHILE,")   { buffer = "'while',"; }
             else if (buffer == "INPUT"   || buffer == "INPUT,")   { buffer = "'?',"; }
             else if (buffer == "ID"      || buffer == "ID,")      { buffer = "'id',"; }

@@ -224,16 +224,35 @@ namespace ast
     {
         ExpressionINode* expr_ = nullptr;
         StatementWrapper* ifScope_ = nullptr;
+        StatementWrapper* elseScope_ = nullptr;
 
     public:
-        IfExpressionNode(ExpressionINode* e, StatementWrapper* s) : StatementINode{}, 
-                                                                    expr_(e), ifScope_(s) {}
+        //IfExpressionNode(ExpressionINode* e, StatementWrapper* s) : StatementINode{}, 
+          //                                                          expr_(e), ifScope_(s) {}
+        
+        IfExpressionNode(ExpressionINode* e, StatementWrapper* is, StatementWrapper* es = nullptr) : StatementINode{},
+                                                                                       expr_(e), 
+                                                                                       ifScope_(is),
+                                                                                       elseScope_(es) {}                 
+                                                                
         void execute() override 
         {
             assert(expr_);
             assert(ifScope_);
-            if(expr_->execute())
-                ifScope_->execute();
+            const int exprResult = expr_->execute();
+
+            if(!elseScope_)
+            {
+                if(exprResult)
+                    ifScope_->execute();
+            }
+            else
+            {
+                if(exprResult)
+                    ifScope_->execute();
+                else    
+                    elseScope_->execute();
+            }
         }
     };
 
