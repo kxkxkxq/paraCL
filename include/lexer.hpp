@@ -55,6 +55,7 @@ namespace yy
     else if (curr_value == "==") return yy::parser::token_type::EQUAL;
     else if (curr_value == "&&") return yy::parser::token_type::AND;
     else if (curr_value == "||") return yy::parser::token_type::OR;
+    else if (curr_value == "!")  return yy::parser::token_type::NOT;
     else return yy::parser::token_type::ERROR;
   }
 

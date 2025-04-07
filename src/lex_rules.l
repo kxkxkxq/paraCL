@@ -22,13 +22,13 @@ ID      [a-zA-Z_][a-zA-Z_0-9]*
 %%
 
 {NL}                                
-{WS}                                //  skip
-{OP}|"<="|">="|"!="|"=="|"&&"|"||"  { return yy::process_operator(yytext); }
-{NUMBER}                            { return yy::process_number(yytext); }
-"print"|"if"|"else"|"while"|"?"     { return yy::process_keyword(yytext); }
-{ID}                                { return yy::process_identifier(yytext); }
-{SEP}                               { return yy::process_separator(yytext); }
-{SCOLON}                            { return yy::process_scolon(yytext); }
-.                                   { return yy::process_unknown(yytext); }
+{WS}                                    //  skip
+{OP}|"<="|">="|"!="|"=="|"&&"|"||"|"!"  { return yy::process_operator(yytext); }
+{NUMBER}                                { return yy::process_number(yytext); }
+"print"|"if"|"else"|"while"|"?"         { return yy::process_keyword(yytext); }
+{ID}                                    { return yy::process_identifier(yytext); }
+{SEP}                                   { return yy::process_separator(yytext); }
+{SCOLON}                                { return yy::process_scolon(yytext); }
+.                                       { return yy::process_unknown(yytext); }
 
 %%  //  nothing

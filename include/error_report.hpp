@@ -40,6 +40,7 @@ namespace errorreport
             else if (buffer == "EQUAL"   || buffer == "EQUAL,")   { buffer = "'==',"; }
             else if (buffer == "AND"     || buffer == "AND,")     { buffer = "'&&',"; }
             else if (buffer == "OR"      || buffer == "OR,")      { buffer = "'||',"; }
+            else if (buffer == "NOT"     || buffer == "NOT,")     { buffer = "'!',"; }
             result += (buffer + " ");
         }
         result.pop_back();  //  to delete excess ' '

@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
                              std::cout << std::endl;
                              break; 
             }
-            return 0; 
+            return 1; 
         }
 
         std::string fileName(argv[1]);
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
         {
             std::cerr << "error: " << std::endl;
             std::cerr << "cannot open " << fileName << std::endl;
-            return 0;
+            return 1;
         }
 
         yy::Driver driver{};
@@ -43,6 +43,11 @@ int main(int argc, char* argv[])
         driver.parse();
         if(driver.is_executable())
             driver.execute();
+        else
+        {
+            std::cerr << "syntax analysis completed with errors" << std::endl;
+            std::cerr << "program execution terminated" << std::endl;
+        }
     }
     catch(std::exception& exptn)
     {
@@ -51,7 +56,7 @@ int main(int argc, char* argv[])
     }
     catch(...)
     {
-        std::cerr << "Undefined error" << std::endl;
+        std::cerr << "undefined error" << std::endl;
         return 1;
     }
 }
