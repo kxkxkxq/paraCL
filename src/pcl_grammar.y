@@ -17,15 +17,20 @@
 //       while_expression -> while ( expression ) substmnt
 //     expression_wrapper -> expression
 //             expression -> assignment 
-//                           | arithmetic_exression
+//                           | algebraic_expression
 //                           | print 
 //             assignment -> variable = expression
 //                           | variable = input
 //                  input -> ?
 //                  print -> print expression
-//  arithmetic_expression -> arithmetic_expression bin_op arithmetic_expression 
-//                           | - subexpr 
+//   algebraic_expression -> arithmetic_expression
+//                           | logic_expression 
 //                           | subexpr
+//  arithmetic_expression -> algebraic_expression bin_op algebraic_expression
+//                           | -subexpr
+//                           | +subexpr
+//       logic_expression -> algebraic_expression bin_op algebraic_expression
+//                           | !subexpr            
 //                subexpr -> terminal 
 //                           | ( expression )
 //               terminal -> number 
@@ -90,6 +95,7 @@ namespace yy
     NEQUAL
     AND
     OR
+    NOT
     SCOLON  
     LCBR
     RCBR    
@@ -116,7 +122,9 @@ namespace yy
 %nterm <StatementINode*> statement 
 %nterm <StatementWrapper*> substmnt
 %nterm <ExpressionWrapper*> expression_wrapper 
-%nterm <ArithmExprWrapper*> arithmetic_expression
+%nterm <ExpressionINode*> algebraic_expression
+%nterm <ArithmExprNode*> arithmetic_expression
+%nterm <LogicExprNode*> logic_expression
 %nterm <ExpressionINode*> expression
 %nterm <ExpressionINode*> subexpr
 %nterm <IfExpressionNode*> if_expression
@@ -132,10 +140,14 @@ namespace yy
 %left LESS GREATER EQUAL LEQUAL GEQUAL NEQUAL
 %left MINUS PLUS
 %left DIV MUL MOD
-%left UMINUS
+%left NOT
+%left UMINUS UPLUS
 
 %nonassoc IF_WITHOUT_ELSE
 %nonassoc ELSE
+
+%nonassoc LOGIC
+%nonassoc ARITHM
 
 %start program
 
@@ -157,7 +169,7 @@ substmnt: statement               { $$ = driver->make_node<StatementWrapper>($1)
         | LCBR scope RCBR         { $$ = driver->make_node<StatementWrapper>($2);
                                     driver->ascend_from_scope(); }
         | empty_statement SCOLON  { $$ = driver->make_node<StatementWrapper>($1); }
-        | error SCOLON            { }
+        | error SCOLON            { /* error reporting */ }
 ;
 
 empty_statement: %empty  { $$ = driver->make_node<EmptyStatement>(); }
@@ -193,14 +205,18 @@ expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1);
 ;
 
 expression: assignment             { $$ = $1; }
-          | arithmetic_expression  { $$ = $1; }
+          | algebraic_expression   { $$ = $1; }
           | print                  { $$ = $1; }
 ;
 
-assignment: variable ASSIGN expression  { $$ = driver->make_node<AssignExpressionNode>($1, $3);
-                                          driver->add_to_context($1); }
-          | variable ASSIGN input       { $$ = driver->make_node<AssignExpressionNode>($1, $3);
-                                          driver->add_to_context($1); }
+assignment: variable ASSIGN expression  { 
+                                          $$ = driver->make_node<AssignExpressionNode>($1, $3);
+                                          driver->add_to_context($1);
+                                        }
+          | variable ASSIGN input       { 
+                                          $$ = driver->make_node<AssignExpressionNode>($1, $3);
+                                          driver->add_to_context($1);
+                                        }
 ;
 
 input: INPUT { NumberNode* number = driver->make_node<NumberNode>();
@@ -210,76 +226,103 @@ input: INPUT { NumberNode* number = driver->make_node<NumberNode>();
 print: PRINT expression { $$ = driver->make_node<PrintNode>($2); }
 ;
 
-arithmetic_expression: arithmetic_expression MINUS arithmetic_expression  
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MINUS);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       } 
-                     | arithmetic_expression PLUS arithmetic_expression %prec PLUS    
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::PLUS);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
+algebraic_expression: arithmetic_expression %prec ARITHM  { $$ = $1; }
+                    | logic_expression      %prec LOGIC   { $$ = $1; }
+                    | subexpr                             { $$ = $1; }
+;
+
+arithmetic_expression: algebraic_expression MINUS algebraic_expression %prec MINUS
+                       {
+                         using ArithmBinOp = BinOpNode<ast::ArithmOpType>;
+                         auto expr = driver->make_node<ArithmBinOp>($1, $3, ast::ArithmOpType::MINUS);
+                         $$ = driver->make_node<ArithmExprNode>(std::move(expr));       
                        }
-                     | arithmetic_expression DIV arithmetic_expression %prec DIV      
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::DIV);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       } 
-                     | arithmetic_expression MUL arithmetic_expression %prec MUL      
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MUL);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       } 
-                     | arithmetic_expression LESS arithmetic_expression %prec LESS     
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::LESS);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr));
-                       } 
-                     | arithmetic_expression GREATER arithmetic_expression %prec GREATER
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GREATER);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr));
+                     | algebraic_expression PLUS algebraic_expression %prec PLUS
+                       {
+                         using ArithmBinOp = BinOpNode<ast::ArithmOpType>;
+                         auto expr = driver->make_node<ArithmBinOp>($1, $3, ast::ArithmOpType::PLUS);
+                         $$ = driver->make_node<ArithmExprNode>(std::move(expr));       
                        }
-                     | arithmetic_expression MOD arithmetic_expression %prec MOD
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::MOD);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       }  
-                     | arithmetic_expression EQUAL arithmetic_expression %prec EQUAL   
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::EQUAL);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       } 
-                     | arithmetic_expression LEQUAL arithmetic_expression %prec LEQUAL
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::LEQUAL);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       } 
-                     | arithmetic_expression GEQUAL arithmetic_expression %prec GEQUAL
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::GEQUAL);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       } 
-                     | arithmetic_expression NEQUAL arithmetic_expression %prec NEQUAL
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::NEQUAL);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       }   
-                     | arithmetic_expression AND arithmetic_expression %prec AND
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::AND);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       }   
-                     | arithmetic_expression OR arithmetic_expression %prec OR
-                       { 
-                            BinOpNode* expr = driver->make_node<BinOpNode>($1, $3, ast::BinOpType::OR);
-                            $$ = driver->make_node<ArithmExprWrapper>(std::move(expr)); 
-                       }                      
-                     | MINUS subexpr %prec UMINUS  
-                       { 
-                            $$ = driver->make_node<ArithmExprWrapper>($2, ast::BinOpType::MINUS); 
+                     | algebraic_expression DIV algebraic_expression %prec DIV
+                       {
+                         using ArithmBinOp = BinOpNode<ast::ArithmOpType>;
+                         auto expr = driver->make_node<ArithmBinOp>($1, $3, ast::ArithmOpType::DIV);
+                         $$ = driver->make_node<ArithmExprNode>(std::move(expr));       
                        }
-                     | subexpr  { $$ = driver->make_node<ArithmExprWrapper>($1); }
+                     | algebraic_expression MUL algebraic_expression %prec MUL
+                       {
+                         using ArithmBinOp = BinOpNode<ast::ArithmOpType>;
+                         auto expr = driver->make_node<ArithmBinOp>($1, $3, ast::ArithmOpType::MUL);
+                         $$ = driver->make_node<ArithmExprNode>(std::move(expr));       
+                       }
+                     | algebraic_expression MOD algebraic_expression %prec MOD
+                       {
+                         using ArithmBinOp = BinOpNode<ast::ArithmOpType>;
+                         auto expr = driver->make_node<ArithmBinOp>($1, $3, ast::ArithmOpType::MOD);
+                         $$ = driver->make_node<ArithmExprNode>(std::move(expr));       
+                       } 
+                     | MINUS subexpr %prec UMINUS 
+                       { 
+                         $$ = driver->make_node<ArithmExprNode>($2, ast::ArithmOpType::UMINUS); 
+                       } 
+                     | PLUS subexpr %prec UPLUS 
+                       { 
+                         $$ = driver->make_node<ArithmExprNode>($2, ast::ArithmOpType::UPLUS); 
+                       } 
+;
+
+logic_expression: algebraic_expression LESS algebraic_expression %prec LESS
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::LESS);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::LESS);       
+                  }
+                | algebraic_expression GREATER algebraic_expression %prec GREATER
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::GREATER);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::GREATER);       
+                  }
+                | algebraic_expression EQUAL algebraic_expression %prec EQUAL
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::EQUAL);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::EQUAL);       
+                  }
+                | algebraic_expression LEQUAL algebraic_expression %prec LEQUAL
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::LEQUAL);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::LEQUAL);       
+                  }
+                | algebraic_expression GEQUAL algebraic_expression %prec GEQUAL
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::GEQUAL);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::GEQUAL);       
+                  }
+                | algebraic_expression NEQUAL algebraic_expression %prec NEQUAL
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::NEQUAL);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::NEQUAL);       
+                  }
+                | algebraic_expression AND algebraic_expression %prec AND
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::AND);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::AND);       
+                  }     
+                | algebraic_expression OR algebraic_expression %prec OR
+                  {
+                    using LogicBinOp = BinOpNode<ast::LogicOpType>;
+                    auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::OR);
+                    $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::OR);       
+                  }
+                | NOT subexpr %prec NOT 
+                  {
+                    $$ = driver->make_node<LogicExprNode>($2, ast::LogicOpType::NOT); 
+                  }
 ;
 
 subexpr: terminal                  { $$ = $1; }
@@ -318,4 +361,4 @@ namespace yy
           std::string msg = errorreport::prepare_error_message(errorMessage);
           std::cerr << loc.end.line << ":" << loc.end.column << ": " << msg << std::endl; 
      }
-}
+}  //  namespace yy

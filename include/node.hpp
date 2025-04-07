@@ -10,21 +10,29 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <type_traits>
 #include <string>
 
 namespace ast
 {
 //-------------------------------------------------------------------------------------------------
 //      TYPES        
-    enum class BinOpType
+    enum class ArithmOpType
     {
+        UMINUS,
+        UPLUS,
         MINUS,
         PLUS,
         DIV,
         MUL,
+        MOD,
+    };
+
+    enum class LogicOpType
+    {
+        NOT,
         LESS,
         GREATER,
-        MOD,
         EQUAL,
         LEQUAL,
         GEQUAL,
@@ -157,66 +165,109 @@ namespace ast
         void execute() override { return; }
     };
 
-    class ArithmExprWrapper : public ExpressionINode
-    {
-        ExpressionINode* expr_;
-        bool exprSign_;
-
+    class AlgebraicExprWrapper final : public ExpressionINode
+    {   
+        ExpressionINode* expr_ = nullptr;
     public:
-        ArithmExprWrapper(ExpressionINode* e = nullptr, 
-                          BinOpType s = ast::BinOpType::PLUS) : ExpressionINode{}, 
-                                                                expr_(e),
-                                                                exprSign_(static_cast<bool>(s)) {}
-        int execute() override 
-        { 
+        AlgebraicExprWrapper(ExpressionINode* e): expr_(e) {}
+        
+        int execute() override
+        {
             assert(expr_);
-            return (exprSign_) ? expr_->execute() : -(expr_->execute()); 
+            return expr_->execute();
         }
     };
 
+    class LogicExprNode final : public ExpressionINode
+    {
+        ExpressionINode* expr_ = nullptr;
+        LogicOpType op_;
+    
+    public:
+        LogicExprNode(ExpressionINode* e, LogicOpType o): ExpressionINode{}, expr_(e), op_(o) {}
+        
+        int execute() override
+        {
+            assert(expr_);
+            const int exprResult = expr_->execute();
+            return (op_ == LogicOpType::NOT)? !exprResult : exprResult;
+        }
+    };
+
+    class ArithmExprNode final : public ExpressionINode
+    {
+        ExpressionINode* expr_ = nullptr;
+        ArithmOpType op_;
+    
+    public:
+        ArithmExprNode(ExpressionINode* e, ArithmOpType o = ArithmOpType::PLUS): ExpressionINode{},
+                                                                                 expr_(e), op_(o) {}
+        int execute() override
+        {
+            assert(expr_);
+            const int exprResult = expr_->execute();
+            return (op_ == ArithmOpType::UMINUS)? -exprResult : exprResult;
+        }
+    };
+
+    template <typename Type> 
+    concept OpType = std::is_same_v<Type, ast::ArithmOpType> || 
+                     std::is_same_v<Type, ast::LogicOpType>; 
+
+    template <typename OpType>
     class BinOpNode final : public ExpressionINode
     {
         ExpressionINode* leftExpr_ = nullptr;
         ExpressionINode* rightExpr_ = nullptr; 
-        BinOpType opType_;
-        
+        OpType binOp_;
+
     public:
-        BinOpNode(ExpressionINode* l, ExpressionINode* r, BinOpType t) : ExpressionINode{}, 
-                                                                         leftExpr_(l),
-                                                                         rightExpr_(r),
-                                                                         opType_(t) {}
-        int execute() override 
-        { 
+        BinOpNode(ExpressionINode* l, ExpressionINode* r, OpType t) : ExpressionINode{}, 
+                                                                      leftExpr_(l),
+                                                                      rightExpr_(r),
+                                                                      binOp_(t) {}
+        int execute() override
+        {
             assert(leftExpr_);
             assert(rightExpr_);
             int lExprRes = leftExpr_->execute(); 
             int rExprRes = rightExpr_->execute();
-
-            switch(opType_)
+        
+            if constexpr (std::is_same_v<OpType, ast::ArithmOpType>)
             {
-                case BinOpType::MINUS:    return lExprRes  - rExprRes;
-                case BinOpType::PLUS:     return lExprRes  + rExprRes;
-                case BinOpType::DIV:      {
-                                            if(rExprRes == 0) 
-                                                throw std::overflow_error("runtime error: division by zero"); 
-                                            return lExprRes  / rExprRes;
-                                          }
-                case BinOpType::MUL:      return lExprRes  * rExprRes;
-                case BinOpType::LESS:     return lExprRes  < rExprRes;
-                case BinOpType::GREATER:  return lExprRes  > rExprRes;
-                case BinOpType::MOD:      {
-                                            if(rExprRes == 0) 
-                                                throw std::overflow_error("runtime error: division by zero"); 
-                                            return lExprRes  % rExprRes;
-                                          }
-                case BinOpType::EQUAL:    return lExprRes == rExprRes;
-                case BinOpType::LEQUAL:   return lExprRes <= rExprRes;
-                case BinOpType::GEQUAL:   return lExprRes >= rExprRes;
-                case BinOpType::NEQUAL:   return lExprRes != rExprRes;
-                case BinOpType::AND:      return lExprRes && rExprRes;
-                case BinOpType::OR:       return lExprRes || rExprRes;
-            } 
-            throw std::runtime_error("impossible case during executing a binary operation");        
+                switch(binOp_)
+                {
+                    case ArithmOpType::MINUS: return lExprRes  - rExprRes;
+                    case ArithmOpType::PLUS:  return lExprRes  + rExprRes;
+                    case ArithmOpType::DIV:   {
+                                                if(rExprRes == 0) 
+                                                    throw std::overflow_error("runtime error: division by zero"); 
+                                                return lExprRes  / rExprRes;
+                                              }
+                    case ArithmOpType::MOD:   {
+                                                if(rExprRes == 0) 
+                                                    throw std::overflow_error("runtime error: division by zero"); 
+                                                return lExprRes  % rExprRes;
+                                              }
+                    case ArithmOpType::MUL:   return lExprRes  * rExprRes;
+                } 
+                throw std::runtime_error("impossible case during executing a binary arithmetic operation"); 
+            }
+            else
+            {
+                switch(binOp_)
+                {
+                    case LogicOpType::LESS:     return lExprRes  < rExprRes;
+                    case LogicOpType::GREATER:  return lExprRes  > rExprRes;
+                    case LogicOpType::EQUAL:    return lExprRes == rExprRes;
+                    case LogicOpType::LEQUAL:   return lExprRes <= rExprRes;
+                    case LogicOpType::GEQUAL:   return lExprRes >= rExprRes;
+                    case LogicOpType::NEQUAL:   return lExprRes != rExprRes;
+                    case LogicOpType::AND:      return lExprRes && rExprRes;
+                    case LogicOpType::OR:       return lExprRes || rExprRes;   
+                }
+                throw std::runtime_error("impossible case during executing a binary logic operation"); 
+            }        
         }
     };
 
@@ -224,16 +275,12 @@ namespace ast
     {
         ExpressionINode* expr_ = nullptr;
         StatementWrapper* ifScope_ = nullptr;
-        StatementWrapper* elseScope_ = nullptr;
+        StatementWrapper* elseScope_;
 
     public:
-        //IfExpressionNode(ExpressionINode* e, StatementWrapper* s) : StatementINode{}, 
-          //                                                          expr_(e), ifScope_(s) {}
-        
-        IfExpressionNode(ExpressionINode* e, StatementWrapper* is, StatementWrapper* es = nullptr) : StatementINode{},
-                                                                                       expr_(e), 
-                                                                                       ifScope_(is),
-                                                                                       elseScope_(es) {}                 
+        IfExpressionNode(ExpressionINode* e, 
+                         StatementWrapper* is, 
+                         StatementWrapper* es = nullptr) : StatementINode{}, expr_(e), ifScope_(is), elseScope_(es) {}                 
                                                                 
         void execute() override 
         {
