@@ -19,13 +19,13 @@ namespace errorreport
             else if (buffer == "RCBR"    || buffer == "RCBR,")    { buffer = "'}',"; }
             else if (buffer == "LPAREN"  || buffer == "LPAREN,")  { buffer = "'(',"; }
             else if (buffer == "RPAREN"  || buffer == "RPAREN,")  { buffer = "')',"; }
-            else if (buffer == "PRINT"   || buffer == "PRINT,")   { buffer = "'print',"; }
-            else if (buffer == "IF"      || buffer == "IF,")      { buffer = "'if',"; }
-            else if (buffer == "ELSE"    || buffer == "ELSE,")    { buffer = "'else',"; }
-            else if (buffer == "WHILE"   || buffer == "WHILE,")   { buffer = "'while',"; }
-            else if (buffer == "INPUT"   || buffer == "INPUT,")   { buffer = "'?',"; }
-            else if (buffer == "ID"      || buffer == "ID,")      { buffer = "'id',"; }
-            else if (buffer == "NUMBER"  || buffer == "NUMBER,")  { buffer = "'number',"; }
+            else if (buffer == "PRINT"   || buffer == "PRINT,")   { buffer = "keyword 'print',"; }
+            else if (buffer == "IF"      || buffer == "IF,")      { buffer = "keyword 'if',"; }
+            else if (buffer == "ELSE"    || buffer == "ELSE,")    { buffer = "keyword 'else',"; }
+            else if (buffer == "WHILE"   || buffer == "WHILE,")   { buffer = "keyword 'while',"; }
+            else if (buffer == "INPUT"   || buffer == "INPUT,")   { buffer = "keyword '?',"; }
+            else if (buffer == "ID"      || buffer == "ID,")      { buffer = "identifier,"; }
+            else if (buffer == "NUMBER"  || buffer == "NUMBER,")  { buffer = "integer number,"; }
             else if (buffer == "PLUS"    || buffer == "PLUS," )   { buffer = "'+',"; }
             else if (buffer == "MINUS"   || buffer == "MINUS,")   { buffer = "'-',"; }
             else if (buffer == "ASSIGN"  || buffer == "ASSIGN,")  { buffer = "'=',"; }

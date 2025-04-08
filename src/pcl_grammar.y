@@ -119,8 +119,11 @@ namespace yy
 %nterm <NumberNode*> number
 %nterm <CurrentScopeNode*> statements 
 %nterm <CurrentScopeNode*> scope
+%nterm <CurrentScopeNode*> subscope
 %nterm <StatementINode*> statement 
-%nterm <StatementWrapper*> substmnt
+%nterm <StatementWrapper*> stmnt_wrapper
+%nterm <StatementWrapper*> scope_wrapper
+%nterm <StatementINode*> substmnt
 %nterm <ExpressionWrapper*> expression_wrapper 
 %nterm <ExpressionINode*> algebraic_expression
 %nterm <ArithmExprNode*> arithmetic_expression
@@ -155,19 +158,28 @@ namespace yy
 program: statements  { driver->set_ast_root($1); }
 ;
 
-statements: %empty               { $$ = driver->make_node<CurrentScopeNode>(); 
-                                   assert($$);
-                                   driver->descend_into_scope($$); 
-                                   assert($$); }
-          | statements substmnt  { assert($1);
-                                   assert($2);
-                                   $$ = $1;
-                                   $$->add_statement($2); }
+statements: %empty                    { 
+                                        $$ = driver->make_node<CurrentScopeNode>(); 
+                                        assert($$);
+                                        driver->descend_into_scope($$); 
+                                        assert($$); 
+                                      }
+          | statements stmnt_wrapper  { 
+                                        assert($1);
+                                        assert($2);
+                                        $$ = $1;
+                                        $$->add_statement($2); 
+                                      }
+;
+
+stmnt_wrapper: substmnt         { $$ = driver->make_node<StatementWrapper>($1); }
+             | LCBR scope RCBR  { 
+                                  $$ = driver->make_node<StatementWrapper>($2);
+                                  driver->ascend_from_scope();
+                                }
 ;
 
 substmnt: statement               { $$ = driver->make_node<StatementWrapper>($1); }
-        | LCBR scope RCBR         { $$ = driver->make_node<StatementWrapper>($2);
-                                    driver->ascend_from_scope(); }
         | empty_statement SCOLON  { $$ = driver->make_node<StatementWrapper>($1); }
         | error SCOLON            { /* error reporting */ }
 ;
@@ -175,12 +187,16 @@ substmnt: statement               { $$ = driver->make_node<StatementWrapper>($1)
 empty_statement: %empty  { $$ = driver->make_node<EmptyStatement>(); }
 ;
 
-scope: %empty          { $$ = driver->make_node<CurrentScopeNode>();
-                         driver->descend_into_scope($$); }
-     | scope substmnt  { assert($1);
-                         assert($2);
-                         $$ = $1;
-                         $$->add_statement($2); }
+scope: %empty               { 
+                              $$ = driver->make_node<CurrentScopeNode>();
+                              driver->descend_into_scope($$); 
+                            }
+     | scope stmnt_wrapper  { 
+                              assert($1);
+                              assert($2);
+                              $$ = $1;
+                              $$->add_statement($2); 
+                            }
 ;
 
 statement: expression_wrapper SCOLON  { $$ = $1; }
@@ -188,25 +204,36 @@ statement: expression_wrapper SCOLON  { $$ = $1; }
          | while_expression           { $$ = $1; }
 ;
 
-
 if_expression: IF LPAREN expression RPAREN 
-                    substmnt %prec IF_WITHOUT_ELSE { $$ = driver->make_node<IfExpressionNode>($3, $5); } 
+                  scope_wrapper %prec IF_WITHOUT_ELSE  { $$ = driver->make_node<IfExpressionNode>($3, $5); } 
              | IF LPAREN expression RPAREN 
-                    substmnt 
+                  scope_wrapper 
                ELSE 
-                    substmnt  { $$ = driver->make_node<IfExpressionNode>($3, $5, $7); }
+                  scope_wrapper  { $$ = driver->make_node<IfExpressionNode>($3, $5, $7); }
 ;
 
+scope_wrapper: LCBR scope RCBR    { $$ = driver->make_node<StatementWrapper>($2); driver->ascend_from_scope(); }
+             | subscope substmnt  { 
+                                    $1->add_statement($2);
+                                    $$ = driver->make_node<StatementWrapper>($1); 
+                                    driver->ascend_from_scope();
+                                  }
+;  
 
-while_expression: WHILE LPAREN expression RPAREN substmnt  { $$ = driver->make_node<WhileExpressionNode>($3, $5); } 
+subscope: %empty  { 
+                    $$ = driver->make_node<CurrentScopeNode>();
+                    driver->descend_into_scope($$);
+                  }
+
+while_expression: WHILE LPAREN expression RPAREN stmnt_wrapper  { $$ = driver->make_node<WhileExpressionNode>($3, $5); } 
 ;
 
 expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1); }
 ;
 
-expression: assignment             { $$ = $1; }
-          | algebraic_expression   { $$ = $1; }
-          | print                  { $$ = $1; }
+expression: assignment            { $$ = $1; }
+          | algebraic_expression  { $$ = $1; }
+          | print                 { $$ = $1; }
 ;
 
 assignment: variable ASSIGN expression  { 
@@ -219,11 +246,13 @@ assignment: variable ASSIGN expression  {
                                         }
 ;
 
-input: INPUT { NumberNode* number = driver->make_node<NumberNode>();
-               $$ = driver->make_node<InputNode>(number); }
+input: INPUT  { 
+                NumberNode* number = driver->make_node<NumberNode>();
+                $$ = driver->make_node<InputNode>(number); 
+              }
 ;
 
-print: PRINT expression { $$ = driver->make_node<PrintNode>($2); }
+print: PRINT expression  { $$ = driver->make_node<PrintNode>($2); }
 ;
 
 algebraic_expression: arithmetic_expression %prec ARITHM  { $$ = $1; }
