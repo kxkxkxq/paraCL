@@ -1,20 +1,27 @@
 //-------------------------------------------------------------------------------------------------
 //
-//      Current paraCL grammar 
-//      (it will probably be modified and updated in the future) :
+// Current paraCL grammar 
+// (it will probably be modified and updated in the future) :
 //             statements -> empty 
-//                           | statements substmnt  
+//                           | statements stmnt_wrapper
+//          stmnt_wrapper -> substmnt
+//                           | { scope }  
 //               substmnt -> statement
-//                           | { scope }
 //                           | empty_statement;
+//                           | error;
 //        empty_statement -> empty
 //                  scope -> empty
-//                           | scope substmnt
+//                           | scope stmnt_wrapper
 //              statement -> expression_wrapper; 
 //                           | if_expression 
 //                           | while_expression 
-//          if_expression -> if ( expression ) substmnt
-//       while_expression -> while ( expression ) substmnt
+//          if_expression -> if ( expression ) 
+//                             scope_wrapper
+//                           | if ( expression ) 
+//                               scope_wrapper 
+//                             else 
+//                               scope_wrapper
+//       while_expression -> while ( expression ) scope_wrapper
 //     expression_wrapper -> expression
 //             expression -> assignment 
 //                           | algebraic_expression
@@ -225,7 +232,7 @@ subscope: %empty  {
                     driver->descend_into_scope($$);
                   }
 
-while_expression: WHILE LPAREN expression RPAREN stmnt_wrapper  { $$ = driver->make_node<WhileExpressionNode>($3, $5); } 
+while_expression: WHILE LPAREN expression RPAREN scope_wrapper  { $$ = driver->make_node<WhileExpressionNode>($3, $5); } 
 ;
 
 expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1); }
