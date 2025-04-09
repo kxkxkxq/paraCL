@@ -1,0 +1,7 @@
+{
+    n = m = 1;
+    {
+        print print n;
+        print m;
+    }
+}

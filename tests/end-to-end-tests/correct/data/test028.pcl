@@ -1,0 +1,28 @@
+n = ?;
+
+if(n <= 0)
+    print 0;
+
+if(n > 0)
+{
+    low = 0;
+    high = n;
+    sqRoot = 0;
+
+    while (low <= high) 
+    {
+        mid = (low + high) / 2;
+        midSq = mid * mid;
+        if ( midSq <= n) 
+        {
+            sqRoot = mid;  
+            low = mid + 1;  
+        }
+        if (midSq > n) 
+        {
+            high = mid - 1;  
+        }
+    }
+
+    print sqRoot;
+}
