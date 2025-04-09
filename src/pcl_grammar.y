@@ -146,8 +146,8 @@ namespace yy
 %nterm <VariableNode*> variable 
 
 %left ASSIGN
-%left AND OR
 %left LESS GREATER EQUAL LEQUAL GEQUAL NEQUAL
+%left AND OR
 %left MINUS PLUS
 %left DIV MUL MOD
 %left NOT
