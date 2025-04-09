@@ -54,4 +54,3 @@ ctest --test-dir ./build/tests/end-to-end-tests/
 ```
 
 [Progress and Internals](./DEVELOPMENT.md)
-
