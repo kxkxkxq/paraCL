@@ -29,7 +29,7 @@ Also implemented diagnostics of errors in lexical, syntactic and semantic analys
 ## How to install
 use 
 ```bush
-git clone -b dev --single-branch git@github.com:kxkxkxq/paraCL
+git clone git@github.com:kxkxkxq/paraCL.git
 
 cd ./paraCL/
 ```
