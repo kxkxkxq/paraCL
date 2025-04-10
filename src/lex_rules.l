@@ -29,6 +29,11 @@ ID      [a-zA-Z_][a-zA-Z_0-9]*
 {ID}                                    { return yy::process_identifier(yytext); }
 {SEP}                                   { return yy::process_separator(yytext); }
 {SCOLON}                                { return yy::process_scolon(yytext); }
-.                                       { return yy::process_unknown(yytext); }
+.                                       {
+                                          int l = get_current_line();
+                                          int c = get_current_column();
+                                          std::string errM = "lexical error, stray token ";
+                                          std::cerr << l << ":" << c << ":" << errM + "'" << YYText() << "'" << std::endl; 
+                                        }
 
 %%  //  nothing

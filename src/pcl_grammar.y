@@ -146,10 +146,10 @@ namespace yy
 %nterm <VariableNode*> variable 
 
 %left ASSIGN
+%right AND OR
 %left LESS GREATER EQUAL LEQUAL GEQUAL NEQUAL
-%left AND OR
 %left MINUS PLUS
-%left DIV MUL MOD
+%right DIV MUL MOD
 %left NOT
 %left UMINUS UPLUS
 
@@ -394,7 +394,9 @@ namespace yy
      void parser::error(const parser::location_type& loc, const std::string& errorMessage)
      { 
           driver->set_executable_status(false);
+          const int line = driver->get_current_line();
+          const int column = driver->get_current_column();
           std::string msg = errorreport::prepare_error_message(errorMessage);
-          std::cerr << loc.end.line << ":" << loc.end.column << ": " << msg << std::endl; 
+          std::cerr << line << ":" << column << ": " << msg << std::endl;  //  TODO: redesign without guts
      }
 }  //  namespace yy

@@ -17,7 +17,7 @@ namespace yy
         std::string lexem = YYText();
         if (lexem == "\n")
         {
-          currentLocation_.end.column = 1;
+          currentLocation_.end.column = 0;
           currentLocation_.end.line = yylineno;
         }
         else
@@ -29,6 +29,9 @@ namespace yy
       {
         return currentLocation_;
       }
+
+      const int get_current_line() const noexcept { return currentLocation_.end.line; }
+      const int get_current_column() const noexcept { return currentLocation_.end.column; }
 
       int yylex();
   };

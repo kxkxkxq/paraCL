@@ -13,8 +13,7 @@ namespace errorreport
         
         while(input >> buffer)
         {
-                 if (buffer == "ERROR"   || buffer == "ERROR,")   { buffer = "stray token in program,"; }
-            else if (buffer == "PRINT"   || buffer == "PRINT,")   { buffer = "keyword 'print',"; }
+                 if (buffer == "PRINT"   || buffer == "PRINT,")   { buffer = "keyword 'print',"; }
             else if (buffer == "IF"      || buffer == "IF,")      { buffer = "keyword 'if',"; }
             else if (buffer == "ELSE"    || buffer == "ELSE,")    { buffer = "keyword 'else',"; }
             else if (buffer == "WHILE"   || buffer == "WHILE,")   { buffer = "keyword 'while',"; }

@@ -71,6 +71,9 @@ namespace yy
             ast_ = curScope;
         }
 
+        const int get_current_line() const noexcept { return lexer_.get_current_line(); }
+        const int get_current_column() const noexcept { return lexer_.get_current_column(); }
+
         CurrentScopeNode* get_current_scope() { assert(scopeStorage.back()); return scopeStorage.back(); }
 
         template <typename NodeType, class... Args>
