@@ -6,3 +6,7 @@ print var3;
 if (var3 >= 0 || var2 <= var && var1 != var3) {
   print var+1;
 }
+
+if ((var3 >= 0) || (var2 <= var) && (var1 != var3)) {
+  print var+1;
+}
