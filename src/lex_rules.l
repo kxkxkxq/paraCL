@@ -9,19 +9,21 @@
 
 %}
 
-WS      [ \t\r\v]+
-NL      "\n"
-DIGIT   [0-9]
-DIGIT1  [1-9]
-OP      [\+\-\=\*\/\<\>\%]
-SEP     [\{\}\(/)]
-SCOLON  ";"+
-NUMBER  {DIGIT1}{DIGIT}*|0
-ID      [a-zA-Z_][a-zA-Z_0-9]*
+COMMENT  "//".* 
+WS       [ \t\r\v]+
+NL       "\n"
+DIGIT    [0-9]
+DIGIT1   [1-9]
+OP       [\+\-\=\*\/\<\>\%]
+SEP      [\{\}\(/)]
+SCOLON   ";"+
+NUMBER   {DIGIT1}{DIGIT}*|0
+ID       [a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
-{NL}                                
+{COMMENT}                               //  skip  
+{NL}                                    //  skip 
 {WS}                                    //  skip
 {OP}|"<="|">="|"!="|"=="|"&&"|"||"|"!"  { return yy::process_operator(yytext); }
 {NUMBER}                                { return yy::process_number(yytext); }
