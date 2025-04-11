@@ -355,7 +355,7 @@ logic_expression: algebraic_expression LESS algebraic_expression %prec LESS
                     auto expr = driver->make_node<LogicBinOp>($1, $3, ast::LogicOpType::OR);
                     $$ = driver->make_node<LogicExprNode>(std::move(expr), ast::LogicOpType::OR);       
                   }
-                | NOT subexpr %prec NOT 
+                | NOT algebraic_expression %prec NOT 
                   {
                     $$ = driver->make_node<LogicExprNode>($2, ast::LogicOpType::NOT); 
                   }
