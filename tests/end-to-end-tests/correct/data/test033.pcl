@@ -1,0 +1,29 @@
+ res = 0;
+    outer = -10;
+
+
+    while (outer <= 10) { 
+         inner = -10; 
+
+        while (inner <= 10) { 
+         
+            if (
+                ((outer % 4 == 0) && (inner % 3 == 0)) && 
+                !((outer + inner) % 5 == 0) &&          
+                (!!((outer * inner) > 0) || !(outer < 0)) 
+            ) {
+                res = res + outer * inner; 
+            } else if (
+                (!(outer % 7 == 0) && !(inner % 2 == 0)) || 
+                (!!((outer - inner) % 3 == 0) && !(outer > 0)) 
+            ) {
+                res = res - (outer + inner); 
+            }
+
+            inner = inner + 1;
+        }
+
+        outer = outer + 1;
+    }
+
+    print res;

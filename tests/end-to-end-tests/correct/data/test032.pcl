@@ -1,0 +1,28 @@
+res = 0; 
+outer = -10; 
+while (outer <= 10) 
+{ 
+    inner = -5; 
+    while (inner <= 5) 
+    { 
+       
+        if (((outer > 0 && inner < 0) || (outer < 0 && inner > 0)) && 
+        !(!(outer % 2 == 0) && !(inner % 3 == 0)) &&              
+        (!!((outer + inner) % 5 == 0) || !!(outer * inner < 0)) )
+     {
+            res = res + outer + inner; 
+        } else if (
+            (!(outer > 0) || !(inner < 0)) &&                         
+        !!((outer * inner) % 7 == 0) &&                           
+        !((outer + inner) % 2 == 0)                               
+    ) 
+    {
+            res = res - outer * inner; 
+        }
+
+        inner = inner + 1; 
+    }
+    
+    outer = outer + 1; 
+}
+print res;

@@ -1,0 +1,35 @@
+res = 0; 
+outer1 = -40;
+while (outer1 <= 5) { 
+    outer2 = -30; 
+    while (outer2 <= 3) { 
+        inner = -20; 
+        while (inner <= 2) { 
+            if (outer1 < 0) {
+                if (outer2 < 0) {
+                    if (inner != 0) {
+                        if (!(outer1 % 2 >= 0)) {
+                            if ((outer2 + inner) % 3 >= 0) {
+                                if (outer1 * outer2 > 0) {
+                                    if (inner % 2 >= 0) {
+                                        if (outer1 + outer2 + inner < 0) {
+                                            if (!(outer1 != outer2)) {
+                                                if (outer1 * inner > 0) {
+                                                    res = res + outer1 * outer2 + inner;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            inner = inner + 1; 
+        }
+        outer2 = outer2 + 1; 
+    }
+    outer1 = outer1 + 1; 
+}
+print res;
