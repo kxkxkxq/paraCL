@@ -241,13 +241,10 @@ expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1);
 expression: assignment            { $$ = $1; }
           | algebraic_expression  { $$ = $1; }
           | print                 { $$ = $1; }
+          | input                 { $$ = $1; }
 ;
 
 assignment: variable ASSIGN expression  { 
-                                          $$ = driver->make_node<AssignExpressionNode>($1, $3);
-                                          driver->add_to_context($1);
-                                        }
-          | variable ASSIGN input       { 
                                           $$ = driver->make_node<AssignExpressionNode>($1, $3);
                                           driver->add_to_context($1);
                                         }
