@@ -27,7 +27,6 @@
 //                           | algebraic_expression
 //                           | print 
 //             assignment -> variable = expression
-//                           | variable = input
 //                  input -> ?
 //                  print -> print expression
 //   algebraic_expression -> arithmetic_expression
@@ -40,6 +39,7 @@
 //                           | !subexpr            
 //                subexpr -> terminal 
 //                           | ( expression )
+//                           | input
 //               terminal -> number 
 //                           | variable 
 //               variable -> id 
@@ -145,7 +145,7 @@ namespace yy
 %nterm <ExpressionINode*> terminal
 %nterm <VariableNode*> variable 
 
-%left ASSIGN
+%right ASSIGN
 %right AND OR
 %left LESS GREATER EQUAL LEQUAL GEQUAL NEQUAL
 %left MINUS PLUS
@@ -241,7 +241,6 @@ expression_wrapper: expression  { $$ = driver->make_node<ExpressionWrapper>($1);
 expression: assignment            { $$ = $1; }
           | algebraic_expression  { $$ = $1; }
           | print                 { $$ = $1; }
-          | input                 { $$ = $1; }
 ;
 
 assignment: variable ASSIGN expression  { 
@@ -360,6 +359,7 @@ logic_expression: algebraic_expression LESS algebraic_expression %prec LESS
 
 subexpr: terminal                  { $$ = $1; }
        | LPAREN expression RPAREN  { $$ = $2; }
+       | input                     { $$ = $1; }
 ;
 
 terminal: number    { $$ = $1; }
