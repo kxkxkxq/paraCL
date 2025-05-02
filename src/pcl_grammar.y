@@ -366,7 +366,8 @@ terminal: number    { $$ = $1; }
         | variable  { 
                       $$ = $1;
                       if(!driver->is_variable_declared($1->get_id())) 
-                         parser::error(@$, "'" + $1->get_id() + "' was not declared in this scope"); 
+                         parser::error(@$, "'" + $1->get_id() + 
+                                       "' was not declared in this scope"); 
                     }
 ;
 
@@ -394,6 +395,6 @@ namespace yy
           const int line = driver->get_current_line();
           const int column = driver->get_current_column();
           std::string msg = errorreport::prepare_error_message(errorMessage);
-          std::cerr << line << ":" << column << ": " << msg << std::endl;  //  TODO: redesign without guts
+          std::cerr << line << ":" << column << ": " << msg << std::endl;
      }
 }  //  namespace yy
